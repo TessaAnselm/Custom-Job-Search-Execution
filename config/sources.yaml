@@ -31,3 +31,35 @@ sources:
       - "penetration tester remote"
       - "devsecops remote"
     location: "Remote"
+
+  - type: indeed
+    enabled: true
+    location: "San Francisco, CA"
+    queries:
+      - "security engineer"
+      - "appsec engineer"
+      - "penetration tester"
+      - "devsecops engineer"
+
+  - type: wellfound
+    enabled: true    # requires playwright — run: playwright install chromium
+    queries:
+      - "security engineer"
+      - "appsec"
+      - "devsecops"
+
+  - type: yc
+    enabled: true
+    remote: true
+    queries:
+      - "security engineer"
+      - "security analyst"
+      - "appsec"
+
+  - type: builtin_sf
+    enabled: true
+    remote: false    # set true to include remote roles
+    keywords:
+      - "security engineer"
+      - "appsec engineer"
+      - "penetration tester"

@@ -6,6 +6,10 @@ from scrapers.greenhouse import GreenhouseScraper
 from scrapers.lever import LeverScraper
 from scrapers.hn_hiring import HNHiringScraper
 from scrapers.linkedin import LinkedInScraper
+from scrapers.indeed import IndeedScraper
+from scrapers.wellfound import WellfoundScraper
+from scrapers.yc import YCScraper
+from scrapers.builtin_sf import BuiltInSFScraper
 from sheets.client import SheetsClient
 
 
@@ -32,6 +36,23 @@ async def scrape_all_sources(sources_path: str) -> list[dict]:
                 scraper = LinkedInScraper(
                     keywords=source.get("keywords", []),
                     location=source.get("location", "Remote"),
+                )
+            elif source_type == "indeed":
+                scraper = IndeedScraper(
+                    queries=source.get("queries", []),
+                    location=source.get("location", "San Francisco, CA"),
+                )
+            elif source_type == "wellfound":
+                scraper = WellfoundScraper(queries=source.get("queries", []))
+            elif source_type == "yc":
+                scraper = YCScraper(
+                    queries=source.get("queries", []),
+                    remote=source.get("remote", True),
+                )
+            elif source_type == "builtin_sf":
+                scraper = BuiltInSFScraper(
+                    keywords=source.get("keywords", []),
+                    remote=source.get("remote", False),
                 )
             else:
                 activity.logger.warning(f"Unknown source type: {source_type}")
