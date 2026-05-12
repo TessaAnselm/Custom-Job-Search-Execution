@@ -390,7 +390,8 @@ def save_local_jobs(jobs: list[dict]):
 
 
 async def _run_standalone_search() -> list[dict]:
-    """Scrape fresh + score with AI — no Temporal or Google Sheets required."""
+    """Scrape all enabled sources + score — no Temporal or Google Sheets required."""
+    import ssl, certifi, aiohttp
     from scoring.scorer import JobScorer
 
     profile = load_profile()
@@ -398,39 +399,119 @@ async def _run_standalone_search() -> list[dict]:
         raise ValueError("Set up your profile first before running a search.")
 
     min_score = profile.get("minimum_score", 65)
+    fallback_queries = profile.get("target_titles", ["software engineer"])
 
-    # Force fresh fetch — clear both cache and old results
+    # Force fresh data
     _preview_cache["jobs"] = []
     _preview_cache["fetched_at"] = 0.0
     if os.path.exists(JOBS_LOCAL_PATH):
         os.remove(JOBS_LOCAL_PATH)
 
-    raw_jobs = await _fetch_live_preview()
-    scorer = JobScorer(profile)
-    today = date.today().isoformat()
+    # ── Load sources.yaml ─────────────────────────────────────────────────────
+    sources_path = os.path.join(os.path.dirname(__file__), "config", "sources.yaml")
+    with open(sources_path) as f:
+        sources_cfg = yaml.safe_load(f).get("sources", [])
+
+    ssl_ctx  = ssl.create_default_context(cafile=certifi.where())
+    scrapers = []
+    for src in sources_cfg:
+        if not src.get("enabled", True):
+            continue
+        t = src.get("type")
+        try:
+            if t == "greenhouse":
+                from scrapers.greenhouse import GreenhouseScraper
+                scrapers.append(GreenhouseScraper(src.get("companies", [])))
+            elif t == "lever":
+                from scrapers.lever import LeverScraper
+                scrapers.append(LeverScraper(src.get("companies", [])))
+            elif t == "hn_hiring":
+                from scrapers.hn_hiring import HNHiringScraper
+                scrapers.append(HNHiringScraper())
+            elif t == "indeed":
+                from scrapers.indeed import IndeedScraper
+                scrapers.append(IndeedScraper(
+                    src.get("queries") or fallback_queries,
+                    src.get("location", "Remote"),
+                ))
+            elif t == "yc":
+                from scrapers.yc import YCScraper
+                scrapers.append(YCScraper(
+                    src.get("queries") or fallback_queries,
+                    remote=src.get("remote", True),
+                ))
+            elif t == "builtin_sf":
+                from scrapers.builtin_sf import BuiltInSFScraper
+                scrapers.append(BuiltInSFScraper(
+                    src.get("keywords") or fallback_queries,
+                    remote=src.get("remote", False),
+                ))
+            # linkedin — needs auth cookie, skip
+            # wellfound — needs Playwright, skip unless installed
+            elif t == "wellfound":
+                try:
+                    from scrapers.wellfound import WellfoundScraper
+                    scrapers.append(WellfoundScraper(src.get("queries") or fallback_queries))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    # ── Scrape all sources concurrently ───────────────────────────────────────
+    raw_results = await asyncio.gather(*[s.fetch() for s in scrapers], return_exceptions=True)
+
+    seen, all_jobs = set(), []
+    for result in raw_results:
+        if not isinstance(result, list):
+            continue
+        for job in result:
+            if job.url not in seen:
+                seen.add(job.url)
+                all_jobs.append(job)
+
+    # ── Score: fast pass for all, AI explanation only for matches ─────────────
+    scorer  = JobScorer(profile)
+    today   = date.today().isoformat()
     results = []
 
-    for job in raw_jobs:
-        try:
-            scored = await scorer.score({
-                "title":       job["Job Title"],
-                "company":     job["Company"],
-                "location":    job["Location"],
-                "salary":      job["Salary"],
-                "description": "",
-            })
-        except Exception:
-            scored = {"score": 0, "explanation": ""}
+    for job in all_jobs:
+        jd = job.to_dict()
+        fast = scorer.score_fast(jd)
+        score = fast["score"]
 
-        score = scored["score"]
-        if score >= min_score:          # only keep jobs that actually match
-            results.append({
-                **job,
-                "Match Score": str(score),
-                "Why It Fits": scored.get("explanation", ""),
-                "Status":      "Review",
-                "_is_preview": False,
-            })
+        if score >= min_score:
+            # Full AI explanation only for jobs that actually match
+            try:
+                full = await scorer.score(jd)
+                explanation = full.get("explanation", fast["explanation"])
+                score = full["score"]
+            except Exception:
+                explanation = fast["explanation"]
+        else:
+            explanation = fast["explanation"]
+
+        results.append({
+            "_row_id":        job.id,
+            "Date Found":     today,
+            "Company":        job.company,
+            "Job Title":      job.title,
+            "Location":       job.location,
+            "Salary":         job.salary,
+            "Job URL":        job.url,
+            "Source":         job.source,
+            "Match Score":    str(score),
+            "Why It Fits":    explanation,
+            "Status":         "Review" if score >= min_score else "Skip",
+            "Role Type":      job.role_type,
+            "Deadline":       job.deadline,
+            "Contact Name":   job.contact_name,
+            "Referral?":      "",
+            "Follow Up Date": "",
+            "Notes":          "",
+            "Resume Version": "",
+            "Cover Note Draft": "",
+            "_is_preview":    False,
+        })
 
     results.sort(key=lambda j: int(j.get("Match Score") or 0), reverse=True)
     save_local_jobs(results)
@@ -445,7 +526,10 @@ def index():
     if not os.path.exists(PROFILE_PATH) or not load_profile().get("name"):
         return redirect("/profile")
     status_filter = request.args.get("status")
-    min_score = int(request.args.get("min_score", 0))
+    has_local = bool(load_local_jobs()) if not using_live_data() else False
+    # Default min_score to profile minimum when viewing scored local results
+    profile_min = load_profile().get("minimum_score", 65) if has_local else 0
+    min_score = int(request.args.get("min_score", profile_min))
     jobs = get_jobs(status_filter=status_filter, min_score=min_score)
     stats = get_stats()
     live = using_live_data()

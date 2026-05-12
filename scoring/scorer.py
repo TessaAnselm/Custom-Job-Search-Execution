@@ -124,6 +124,24 @@ class JobScorer:
 
         return 50.0  # Neutral
 
+    def score_fast(self, job: dict) -> dict:
+        """Deterministic score only — no AI call. Used for bulk pre-filtering."""
+        breakdown = {
+            "title_match":    self._score_title(job),
+            "skills_match":   self._score_skills(job),
+            "salary_match":   self._score_salary(job),
+            "location_match": self._score_location(job),
+            "industry_match": self._score_industry(job),
+        }
+        weighted = sum(breakdown[f] * self.weights.get(f, 0) for f in breakdown)
+        score = min(100, max(0, round(weighted)))
+        top = max(breakdown, key=breakdown.get)
+        return {
+            "score": score,
+            "breakdown": breakdown,
+            "explanation": f"Score {score}/100 — top signal: {top.replace('_', ' ')} ({breakdown[top]:.0f}/100).",
+        }
+
     async def _explain(self, job: dict, score: int, breakdown: dict) -> str:
         try:
             prompt = (
