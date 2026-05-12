@@ -159,10 +159,6 @@ def load_profile() -> dict:
     if os.path.exists(PROFILE_PATH):
         with open(PROFILE_PATH) as f:
             return yaml.safe_load(f) or {}
-    example = PROFILE_PATH + ".example"
-    if os.path.exists(example):
-        with open(example) as f:
-            return yaml.safe_load(f) or {}
     return {}
 
 
