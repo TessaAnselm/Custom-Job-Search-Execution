@@ -368,12 +368,19 @@ def gpt_extract_profile(resume_text: str) -> dict:
 
 # ── Local job storage (standalone mode, no Google Sheets needed) ─────────────
 
+LOCAL_JOBS_TTL = 12 * 3600  # expire local results after 12 hours
+
+
 def load_local_jobs() -> list[dict]:
-    if os.path.exists(JOBS_LOCAL_PATH):
-        import json
-        with open(JOBS_LOCAL_PATH) as f:
-            return json.load(f)
-    return []
+    """Load scored results; return [] if file missing or older than 12 hours."""
+    import json, time
+    if not os.path.exists(JOBS_LOCAL_PATH):
+        return []
+    if time.time() - os.path.getmtime(JOBS_LOCAL_PATH) > LOCAL_JOBS_TTL:
+        os.remove(JOBS_LOCAL_PATH)
+        return []
+    with open(JOBS_LOCAL_PATH) as f:
+        return json.load(f)
 
 
 def save_local_jobs(jobs: list[dict]):
@@ -383,43 +390,47 @@ def save_local_jobs(jobs: list[dict]):
 
 
 async def _run_standalone_search() -> list[dict]:
-    """Scrape + score locally — no Temporal or Google Sheets required."""
+    """Scrape fresh + score with AI — no Temporal or Google Sheets required."""
     from scoring.scorer import JobScorer
-    import json as _json
 
     profile = load_profile()
     if not profile.get("name"):
         raise ValueError("Set up your profile first before running a search.")
 
-    # Re-use the preview fetcher (has SSL, HN + Built In SF)
-    _preview_cache["jobs"] = []          # force fresh fetch
-    _preview_cache["fetched_at"] = 0.0
-    raw_jobs = await _fetch_live_preview()
+    min_score = profile.get("minimum_score", 65)
 
+    # Force fresh fetch — clear both cache and old results
+    _preview_cache["jobs"] = []
+    _preview_cache["fetched_at"] = 0.0
+    if os.path.exists(JOBS_LOCAL_PATH):
+        os.remove(JOBS_LOCAL_PATH)
+
+    raw_jobs = await _fetch_live_preview()
     scorer = JobScorer(profile)
     today = date.today().isoformat()
     results = []
 
     for job in raw_jobs:
-        job_dict = {
-            "title":       job["Job Title"],
-            "company":     job["Company"],
-            "location":    job["Location"],
-            "salary":      job["Salary"],
-            "description": "",
-        }
         try:
-            scored = await scorer.score(job_dict)
+            scored = await scorer.score({
+                "title":       job["Job Title"],
+                "company":     job["Company"],
+                "location":    job["Location"],
+                "salary":      job["Salary"],
+                "description": "",
+            })
         except Exception:
             scored = {"score": 0, "explanation": ""}
 
-        results.append({
-            **job,
-            "Match Score":    str(scored["score"]),
-            "Why It Fits":    scored.get("explanation", ""),
-            "Status":         "Review",
-            "_is_preview":    False,
-        })
+        score = scored["score"]
+        if score >= min_score:          # only keep jobs that actually match
+            results.append({
+                **job,
+                "Match Score": str(score),
+                "Why It Fits": scored.get("explanation", ""),
+                "Status":      "Review",
+                "_is_preview": False,
+            })
 
     results.sort(key=lambda j: int(j.get("Match Score") or 0), reverse=True)
     save_local_jobs(results)
@@ -438,10 +449,12 @@ def index():
     jobs = get_jobs(status_filter=status_filter, min_score=min_score)
     stats = get_stats()
     live = using_live_data()
+    has_local = bool(load_local_jobs()) if not live else False
+    using_preview = not live and not has_local
     region = get_local_region()
 
-    # In preview mode, tag and sort timezone-matching jobs to the top
-    if not live:
+    # Tag + sort by timezone in preview mode; local scored results keep their score order
+    if using_preview:
         for j in jobs:
             j["_tz_match"] = bool(_location_score(j.get("Location", ""), region))
         jobs = sorted(jobs, key=lambda j: j["_tz_match"], reverse=True)
@@ -453,7 +466,8 @@ def index():
         status_filter=status_filter or "",
         min_score=min_score,
         using_live=live,
-        using_preview=not live,
+        using_local=has_local,
+        using_preview=using_preview,
         region=region,
     )
 

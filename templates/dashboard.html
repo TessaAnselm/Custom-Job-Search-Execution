@@ -22,7 +22,9 @@
     <div class="header-actions">
       {% if using_live %}
         <span class="badge badge-live">Live</span>
-      {% elif using_preview %}
+      {% elif using_local %}
+        <span class="badge badge-live">Scored</span>
+      {% else %}
         <span class="badge badge-preview">Preview</span>
       {% endif %}
       <button class="btn btn-primary" id="triggerSearchBtn">Run Search</button>
@@ -33,15 +35,20 @@
 <main>
 
   {% if using_preview %}
-  <!-- Preview banner -->
   <div class="preview-banner">
     <span class="preview-icon">&#127759;</span>
-    <span>Live jobs from <strong>HN Who's Hiring</strong> and <strong>Built In SF</strong> — sorted by your timezone (<strong>{{ region.label }}</strong>). Unscored until you run a full search.</span>
+    <span>Live jobs from <strong>HN Who's Hiring</strong> and <strong>Built In SF</strong> — sorted by your timezone (<strong>{{ region.label }}</strong>). Run a scored search to see only jobs that match your profile.</span>
     <button class="btn btn-sm btn-primary" id="triggerSearchBtn2" style="margin-left:auto">Run scored search</button>
+  </div>
+  {% elif using_local %}
+  <div class="preview-banner" style="background:#0a1f0a;border-color:#1a4a1a;">
+    <span class="preview-icon">&#9989;</span>
+    <span>Showing <strong>{{ jobs|length }} matched job{{ 's' if jobs|length != 1 }}</strong> scored against your profile. Results expire in 12 hours — run search again for fresh jobs.</span>
+    <button class="btn btn-sm btn-ghost" id="triggerSearchBtn2" style="margin-left:auto">Refresh</button>
   </div>
   {% endif %}
 
-  <!-- Stats bar (hidden in preview mode — no meaningful status breakdown yet) -->
+  <!-- Stats bar (hidden in preview mode only) -->
   {% if not using_preview %}
   <section class="stats-bar">
     {% set status_order = ["Review", "Ready to Apply", "Applied", "Follow Up", "Interview", "Rejected", "Skip"] %}
@@ -59,9 +66,9 @@
   </section>
   {% endif %}
 
-  <!-- Filter bar -->
+  <!-- Filter bar (shown when we have scored results) -->
+  {% if not using_preview %}
   <section class="filter-bar">
-    {% if not using_preview %}
     <form method="GET" action="/">
       {% if status_filter %}
         <input type="hidden" name="status" value="{{ status_filter }}" />
@@ -70,9 +77,13 @@
       <input type="number" id="min_score" name="min_score" value="{{ min_score }}" min="0" max="100" style="width:60px" />
       <button type="submit" class="btn btn-sm">Filter</button>
     </form>
-    {% endif %}
     <span class="job-count">{{ jobs|length }} job{{ 's' if jobs|length != 1 }}</span>
   </section>
+  {% else %}
+  <section class="filter-bar">
+    <span class="job-count">{{ jobs|length }} job{{ 's' if jobs|length != 1 }}</span>
+  </section>
+  {% endif %}
 
   <!-- Job table -->
   {% if jobs %}
