@@ -1,0 +1,33 @@
+sources:
+  - type: greenhouse
+    enabled: true
+    companies:
+      - stripe
+      - airbnb
+      - notion
+      - figma
+      - cloudflare
+      - hashicorp
+      - datadog
+
+  - type: lever
+    enabled: true
+    companies:
+      - anthropic
+      - openai
+      - mistral
+      - scale
+      - snyk
+      - lacework
+
+  - type: hn_hiring
+    enabled: true
+
+  - type: linkedin
+    enabled: false   # requires LINKEDIN_LI_AT session cookie
+    keywords:
+      - "security engineer remote"
+      - "appsec engineer remote"
+      - "penetration tester remote"
+      - "devsecops remote"
+    location: "Remote"

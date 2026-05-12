@@ -1,0 +1,77 @@
+name: "Your Name"
+
+target_titles:
+  - "Security Engineer"
+  - "Security Analyst"
+  - "Penetration Tester"
+  - "AppSec Engineer"
+  - "DevSecOps Engineer"
+
+skills:
+  - Python
+  - Network Security
+  - Penetration Testing
+  - Kubernetes
+  - Docker
+  - Linux
+  - OWASP
+  - Burp Suite
+  - Wireshark
+  - SIEM
+
+location:
+  preferred:
+    - "Remote"
+    - "San Francisco"
+    - "San Jose"
+  hard_no:
+    - "Requires Relocation"
+
+salary:
+  minimum: 100000
+  target: 140000
+
+role_type: IC   # IC | Manager | Either
+
+experience_years: 2
+
+industries:
+  preferred:
+    - "Cybersecurity"
+    - "Fintech"
+    - "Dev Tools"
+    - "AI/ML Infrastructure"
+    - "Cloud"
+  avoid:
+    - "Gambling"
+    - "AdTech"
+
+scoring_weights:
+  title_match: 0.30
+  skills_match: 0.25
+  salary_match: 0.20
+  location_match: 0.15
+  industry_match: 0.10
+
+minimum_score: 60
+
+# Paste your base resume text here — used for tailoring and cover notes
+base_resume: |
+  [Your name]
+  [Email] | [Phone] | [LinkedIn] | [GitHub]
+
+  SUMMARY
+  Security-focused engineer with hands-on experience in network monitoring,
+  vulnerability assessment, and web application security.
+
+  SKILLS
+  Python, Bash, Linux, Kubernetes, Docker, Burp Suite, Wireshark,
+  Nmap, Metasploit, OWASP Top 10, SIEM tools
+
+  PROJECTS
+  - Home Sentinel: Python-based home network security monitor with Flask dashboard,
+    device discovery, threat intel integration, and risk scoring.
+  - DailyCyber: Ongoing CTF writeups covering cryptography, exploitation, and OSINT.
+
+  EDUCATION
+  City College of San Francisco — CNIT (Cybersecurity & Networking)

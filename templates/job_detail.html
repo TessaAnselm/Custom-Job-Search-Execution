@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ job['Job Title'] }} — {{ job['Company'] }}</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <a href="/" style="text-decoration:none;color:inherit">
+        <span class="logo-icon">&#8592;</span>
+        <span>Back</span>
+      </a>
+    </div>
+    <div class="header-actions">
+      {% set score = job['Match Score']|int %}
+      <span class="score-badge score-{{ 'high' if score >= 75 else ('mid' if score >= 55 else 'low') }} score-lg">
+        {{ score }}/100
+      </span>
+    </div>
+  </div>
+</header>
+
+<main class="detail-main">
+
+  <div class="detail-header">
+    <div>
+      <h1>{{ job['Job Title'] }}</h1>
+      <p class="detail-meta">
+        <strong>{{ job['Company'] }}</strong>
+        &nbsp;·&nbsp; {{ job['Location'] }}
+        {% if job['Salary'] %}&nbsp;·&nbsp; {{ job['Salary'] }}{% endif %}
+        {% if job['Source'] %}&nbsp;·&nbsp; <span class="source-tag">{{ job['Source'] }}</span>{% endif %}
+      </p>
+    </div>
+    <div class="detail-status">
+      <span class="status-pill status-pill-{{ job['Status']|lower|replace(' ', '-') }}">
+        {{ job['Status'] }}
+      </span>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+
+    <div class="detail-card">
+      <h3>Why it fits</h3>
+      <p>{{ job['Why It Fits'] or 'No explanation generated.' }}</p>
+    </div>
+
+    {% if job['Cover Note Draft'] %}
+    <div class="detail-card">
+      <h3>Cover note draft</h3>
+      <pre class="cover-note">{{ job['Cover Note Draft'] }}</pre>
+    </div>
+    {% endif %}
+
+    {% if job['Resume Version'] %}
+    <div class="detail-card">
+      <h3>Tailored resume</h3>
+      <p><code>{{ job['Resume Version'] }}</code></p>
+    </div>
+    {% endif %}
+
+    <div class="detail-card detail-meta-card">
+      <h3>Details</h3>
+      <table class="meta-table">
+        <tr><td>Date found</td><td>{{ job['Date Found'] }}</td></tr>
+        <tr><td>Deadline</td><td>{{ job['Deadline'] or '—' }}</td></tr>
+        <tr><td>Contact</td><td>{{ job['Contact Name'] or '—' }}</td></tr>
+        <tr><td>Referral</td><td>{{ job['Referral?'] or 'Unknown' }}</td></tr>
+        <tr><td>Follow up</td><td>{{ job['Follow Up Date'] or '—' }}</td></tr>
+        {% if job['Notes'] %}<tr><td>Notes</td><td>{{ job['Notes'] }}</td></tr>{% endif %}
+      </table>
+      <a href="{{ job['Job URL'] }}" target="_blank" class="btn btn-primary" style="margin-top:1rem;display:inline-block">
+        View posting &#8599;
+      </a>
+    </div>
+
+  </div>
+
+  {% if job['Status'] in ['Review', 'New'] %}
+  <div class="detail-actions">
+    <button class="btn btn-apply-lg" onclick="decide('{{ job['_row_id'] }}', 'apply')">Mark Ready to Apply</button>
+    <button class="btn btn-later-lg" onclick="decide('{{ job['_row_id'] }}', 'later')">Save for Later</button>
+    <button class="btn btn-skip-lg" onclick="decide('{{ job['_row_id'] }}', 'skip')">Skip</button>
+  </div>
+  {% endif %}
+
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+function decide(rowId, action) {
+  fetch('/api/approve', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({row_id: rowId, action: action}),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      showToast('Updated → ' + data.status);
+      setTimeout(() => window.location.href = '/', 1200);
+    } else {
+      showToast('Error: ' + (data.error || 'unknown'), true);
+    }
+  });
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' toast-error' : '');
+  setTimeout(() => t.classList.add('hidden'), 2500);
+}
+</script>
+</body>
+</html>

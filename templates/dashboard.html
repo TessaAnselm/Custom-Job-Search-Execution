@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Search</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">&#127919;</span>
+      <span>Job Search</span>
+    </div>
+    <div class="header-actions">
+      {% if using_demo %}
+        <span class="badge badge-demo">Demo data</span>
+      {% else %}
+        <span class="badge badge-live">Live</span>
+      {% endif %}
+      <button class="btn btn-primary" id="triggerSearchBtn">Run Search</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Stats bar -->
+  <section class="stats-bar">
+    {% set status_order = ["Review", "Ready to Apply", "Applied", "Follow Up", "Interview", "Rejected", "Skip"] %}
+    {% for s in status_order %}
+      {% if stats.get(s) %}
+      <a class="stat-chip {% if status_filter == s %}active{% endif %}" href="/?status={{ s }}">
+        <span class="stat-label">{{ s }}</span>
+        <span class="stat-count">{{ stats[s] }}</span>
+      </a>
+      {% endif %}
+    {% endfor %}
+    {% if status_filter %}
+    <a class="stat-chip clear" href="/">Clear filter</a>
+    {% endif %}
+  </section>
+
+  <!-- Filter bar -->
+  <section class="filter-bar">
+    <form method="GET" action="/">
+      {% if status_filter %}
+        <input type="hidden" name="status" value="{{ status_filter }}" />
+      {% endif %}
+      <label for="min_score">Min score:</label>
+      <input type="number" id="min_score" name="min_score" value="{{ min_score }}" min="0" max="100" style="width:60px" />
+      <button type="submit" class="btn btn-sm">Filter</button>
+    </form>
+    <span class="job-count">{{ jobs|length }} job{{ 's' if jobs|length != 1 }}</span>
+  </section>
+
+  <!-- Job table -->
+  {% if jobs %}
+  <section class="job-table-wrap">
+    <table class="job-table">
+      <thead>
+        <tr>
+          <th>Score</th>
+          <th>Company</th>
+          <th>Title</th>
+          <th>Location</th>
+          <th>Salary</th>
+          <th>Source</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr class="job-row status-{{ job['Status']|lower|replace(' ', '-') }}"
+            data-row-id="{{ job['_row_id'] }}"
+            data-url="{{ job['Job URL'] }}">
+          <td>
+            <span class="score-badge score-{{ 'high' if job['Match Score']|int >= 75 else ('mid' if job['Match Score']|int >= 55 else 'low') }}">
+              {{ job['Match Score'] }}
+            </span>
+          </td>
+          <td class="company-cell">
+            <strong>{{ job['Company'] }}</strong>
+            {% if job.get('Referral?') == 'Yes' %}
+              <span class="ref-badge">referral</span>
+            {% endif %}
+          </td>
+          <td>
+            <a class="job-title-link" href="/job/{{ job['_row_id'] }}">{{ job['Job Title'] }}</a>
+          </td>
+          <td class="muted">{{ job['Location'] }}</td>
+          <td class="muted">{{ job['Salary'] or '—' }}</td>
+          <td><span class="source-tag">{{ job['Source'] }}</span></td>
+          <td>
+            <span class="status-pill status-pill-{{ job['Status']|lower|replace(' ', '-') }}">
+              {{ job['Status'] }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            {% if job['Status'] in ['Review', 'New'] %}
+            <button class="btn-action btn-apply" onclick="decide('{{ job['_row_id'] }}', 'apply')">Apply</button>
+            <button class="btn-action btn-later" onclick="decide('{{ job['_row_id'] }}', 'later')">Later</button>
+            <button class="btn-action btn-skip" onclick="decide('{{ job['_row_id'] }}', 'skip')">Skip</button>
+            {% else %}
+            <a href="{{ job['Job URL'] }}" target="_blank" class="btn-action btn-view">View</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% else %}
+  <div class="empty-state">
+    <p>No jobs match this filter.</p>
+    <a href="/">Clear filters</a>
+  </div>
+  {% endif %}
+
+</main>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- Run Search modal -->
+<div id="searchModal" class="modal hidden">
+  <div class="modal-box">
+    <h2>Run Job Search</h2>
+    <p>This triggers a full scrape → score → alert pipeline via Temporal.<br>
+    You'll get a Telegram or Gmail alert when strong matches are found.</p>
+    <div id="searchResult" class="search-result hidden"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmSearchBtn">Start Search</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>

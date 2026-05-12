@@ -1,0 +1,28 @@
+# Secrets — never commit these
+.env
+*.json
+!mcp.json
+
+# Personal profile — gitignore the real one, commit profile.yaml.example instead
+config/profile.yaml
+
+# Generated resume files contain personal info
+resumes/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

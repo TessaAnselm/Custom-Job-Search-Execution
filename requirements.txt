@@ -1,0 +1,21 @@
+# Temporal workflow engine
+temporalio>=1.5.0
+
+# OpenAI (scoring explanations, resume tailoring, cover notes)
+openai>=1.30.0
+
+# HTTP client for scrapers and alerts
+aiohttp>=3.9.0
+
+# Google Sheets
+google-api-python-client>=2.130.0
+google-auth>=2.29.0
+
+# Config parsing
+pyyaml>=6.0.1
+
+# LinkedIn scraper (optional — only needed if LinkedIn source is enabled)
+playwright>=1.44.0
+
+# Environment loading
+python-dotenv>=1.0.1
