@@ -185,28 +185,36 @@ def extract_text_from_upload(file_storage) -> str:
 
 
 def gpt_extract_profile(resume_text: str) -> dict:
-    """Use OpenAI to extract structured profile fields from resume text."""
+    """Use OpenAI to extract a complete profile from resume text."""
     import json
     from openai import OpenAI
     client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-    prompt = f"""Extract structured information from this resume. Return JSON only, no explanation.
+    prompt = f"""You are a career profile parser. Extract a complete job-search profile from this resume.
+Return JSON only — no explanation, no markdown.
 
-Fields to extract:
-- name (string)
-- experience_years (integer, estimate from work history)
-- skills (list of strings, top 10-15 technical skills)
-- target_titles (list of strings, 3-5 job titles this person would target based on their background)
+Extract these fields:
+- name (string — full name from the resume header)
+- experience_years (integer — total years of professional experience, estimate from dates)
+- role_type (string — "IC" if individual contributor, "Manager" if they managed people, "Either" if both)
+- skills (list of strings — top 12-15 technical skills, tools, languages, frameworks)
+- target_titles (list of 4-6 strings — job titles this person should target based on their background)
+- location_preferred (list of strings — infer from their current city; always include "Remote" if their work history includes remote roles)
+- location_hard_no (list of strings — leave empty unless resume explicitly says they can't relocate)
+- salary_minimum (integer — conservative estimate in USD annual based on experience level and tech stack; 0 if unclear)
+- salary_target (integer — optimistic but realistic USD annual target; 0 if unclear)
+- industries_preferred (list of 3-5 strings — industries matching their background and likely interests)
+- industries_avoid (list of strings — leave empty unless resume gives clear signals)
+- summary (string — 2-3 sentence professional summary written in first person, based on their actual experience)
 
 Resume:
-{resume_text[:3000]}
+{resume_text[:4000]}
 
-Return valid JSON like:
-{{"name": "...", "experience_years": 3, "skills": [...], "target_titles": [...]}}"""
+Return valid JSON matching exactly these field names."""
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=400,
+        max_tokens=800,
         response_format={"type": "json_object"},
     )
     return json.loads(response.choices[0].message.content)
@@ -343,15 +351,50 @@ def api_upload_resume():
     try:
         text = extract_text_from_upload(f)
         extracted = {"base_resume": text.strip()}
+
         if os.getenv("OPENAI_API_KEY"):
-            try:
-                structured = gpt_extract_profile(text)
-                extracted.update(structured)
-            except Exception:
-                pass  # Proceed with just the raw text
-        return jsonify({"ok": True, "extracted": extracted})
+            structured = gpt_extract_profile(text)
+            extracted.update(structured)
+
+        # Build and save a complete profile.yaml immediately
+        profile = _build_profile_from_extracted(extracted, text)
+        save_profile(profile)
+
+        return jsonify({"ok": True, "extracted": extracted, "profile": profile})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+def _build_profile_from_extracted(extracted: dict, raw_resume_text: str) -> dict:
+    """Map GPT-extracted fields into the profile.yaml schema."""
+    return {
+        "name": extracted.get("name", ""),
+        "experience_years": extracted.get("experience_years", 0),
+        "role_type": extracted.get("role_type", "IC"),
+        "target_titles": extracted.get("target_titles", []),
+        "skills": extracted.get("skills", []),
+        "location": {
+            "preferred": extracted.get("location_preferred", ["Remote"]),
+            "hard_no":   extracted.get("location_hard_no", []),
+        },
+        "salary": {
+            "minimum": extracted.get("salary_minimum", 0),
+            "target":  extracted.get("salary_target", 0),
+        },
+        "industries": {
+            "preferred": extracted.get("industries_preferred", []),
+            "avoid":     extracted.get("industries_avoid", []),
+        },
+        "scoring_weights": {
+            "title_match":    0.30,
+            "skills_match":   0.25,
+            "salary_match":   0.20,
+            "location_match": 0.15,
+            "industry_match": 0.10,
+        },
+        "minimum_score": 65,
+        "base_resume": extracted.get("summary", "") + "\n\n" + raw_resume_text.strip(),
+    }
 
 
 @app.route("/api/save-resume/<row_id>", methods=["POST"])

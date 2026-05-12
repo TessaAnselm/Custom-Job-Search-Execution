@@ -1,6 +1,7 @@
-// Resume upload
-const uploadZone = document.getElementById('uploadZone');
-const fileInput  = document.getElementById('resumeFile');
+// ── Resume upload ─────────────────────────────────────────────────────────
+
+const uploadZone   = document.getElementById('uploadZone');
+const fileInput    = document.getElementById('resumeFile');
 const uploadStatus = document.getElementById('uploadStatus');
 
 uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
@@ -16,7 +17,9 @@ function handleFile(file) {
   if (file.size > 5 * 1024 * 1024) { showToast('File too large (max 5MB)', true); return; }
 
   uploadStatus.className = 'upload-status';
-  uploadStatus.textContent = 'Parsing resume…';
+  uploadStatus.textContent = 'Reading resume and extracting profile…';
+  uploadZone.style.opacity = '0.5';
+  uploadZone.style.pointerEvents = 'none';
 
   const fd = new FormData();
   fd.append('resume', file);
@@ -24,60 +27,80 @@ function handleFile(file) {
   fetch('/api/upload-resume', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
+      uploadZone.style.opacity = '';
+      uploadZone.style.pointerEvents = '';
+
       if (data.ok) {
-        uploadStatus.textContent = 'Resume parsed — fields updated below. Review and save.';
+        uploadStatus.textContent = 'Profile updated from your resume. Review the fields below.';
         uploadStatus.classList.add('status-ok');
+        // Profile was already saved server-side — reload the form with fresh data
         fillForm(data.extracted);
         if (data.extracted.base_resume) {
           document.getElementById('baseResumeText').value = data.extracted.base_resume;
         }
-        showToast('Resume parsed successfully');
+        showSaveStatus('Saved from resume');
       } else {
-        uploadStatus.textContent = 'Parse failed: ' + (data.error || 'unknown error');
+        uploadStatus.textContent = 'Failed: ' + (data.error || 'unknown error');
         uploadStatus.classList.add('status-error');
       }
     })
     .catch(() => {
-      uploadStatus.textContent = 'Network error';
+      uploadZone.style.opacity = '';
+      uploadZone.style.pointerEvents = '';
+      uploadStatus.textContent = 'Network error — try again.';
       uploadStatus.classList.add('status-error');
     });
 }
 
-function fillForm(data) {
+function fillForm(d) {
   const set = (name, val) => {
     const el = document.querySelector(`[name="${name}"]`);
-    if (el && val !== undefined && val !== null && val !== '') el.value = val;
+    if (!el || val === undefined || val === null) return;
+    el.value = Array.isArray(val) ? val.join('\n') : val;
   };
-  set('name', data.name);
-  set('experience_years', data.experience_years);
-  if (data.skills?.length) set('skills', data.skills.join('\n'));
-  if (data.target_titles?.length) set('target_titles', data.target_titles.join('\n'));
+
+  set('name',               d.name);
+  set('experience_years',   d.experience_years);
+  set('target_titles',      d.target_titles);
+  set('skills',             d.skills);
+  set('location_preferred', d.location_preferred);
+  set('location_hard_no',   d.location_hard_no);
+  set('industries_preferred', d.industries_preferred);
+  set('industries_avoid',     d.industries_avoid);
+
+  if (d.salary_minimum) set('salary_minimum', d.salary_minimum);
+  if (d.salary_target)  set('salary_target',  d.salary_target);
+
+  // role_type is a <select>
+  if (d.role_type) {
+    const sel = document.querySelector('[name="role_type"]');
+    if (sel) sel.value = d.role_type;
+  }
 }
 
-// Profile form save
+// ── Profile form save ─────────────────────────────────────────────────────
+
 document.getElementById('profileForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const form = e.target;
-  const fd = new FormData(form);
-  const saveStatus = document.getElementById('saveStatus');
+  const fd = new FormData(e.target);
 
   const payload = {
-    name:               fd.get('name'),
-    experience_years:   parseInt(fd.get('experience_years')) || 0,
-    role_type:          fd.get('role_type'),
-    target_titles:      fd.get('target_titles').split('\n').map(s => s.trim()).filter(Boolean),
-    skills:             fd.get('skills').split('\n').map(s => s.trim()).filter(Boolean),
+    name:             fd.get('name'),
+    experience_years: parseInt(fd.get('experience_years')) || 0,
+    role_type:        fd.get('role_type'),
+    target_titles:    lines(fd.get('target_titles')),
+    skills:           lines(fd.get('skills')),
     location: {
-      preferred: fd.get('location_preferred').split('\n').map(s => s.trim()).filter(Boolean),
-      hard_no:   fd.get('location_hard_no').split('\n').map(s => s.trim()).filter(Boolean),
+      preferred: lines(fd.get('location_preferred')),
+      hard_no:   lines(fd.get('location_hard_no')),
     },
     salary: {
       minimum: parseInt(fd.get('salary_minimum')) || 0,
       target:  parseInt(fd.get('salary_target'))  || 0,
     },
     industries: {
-      preferred: fd.get('industries_preferred').split('\n').map(s => s.trim()).filter(Boolean),
-      avoid:     fd.get('industries_avoid').split('\n').map(s => s.trim()).filter(Boolean),
+      preferred: lines(fd.get('industries_preferred')),
+      avoid:     lines(fd.get('industries_avoid')),
     },
     scoring_weights: {
       title_match:    parseFloat(fd.get('w_title'))    || 0.30,
@@ -90,29 +113,37 @@ document.getElementById('profileForm').addEventListener('submit', async e => {
     base_resume:   fd.get('base_resume'),
   };
 
-  saveStatus.textContent = 'Saving…';
-  saveStatus.className = 'save-status';
+  showSaveStatus('Saving…');
 
   try {
-    const res = await fetch('/api/save-profile', {
+    const res  = await fetch('/api/save-profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (data.ok) {
-      saveStatus.textContent = 'Saved';
-      saveStatus.className = 'save-status status-ok';
-      showToast('Profile saved to config/profile.yaml');
+      showSaveStatus('Saved');
+      showToast('Profile saved');
     } else {
-      saveStatus.textContent = 'Error: ' + (data.error || 'unknown');
-      saveStatus.className = 'save-status status-error';
+      showSaveStatus('Error: ' + (data.error || 'unknown'), true);
     }
   } catch {
-    saveStatus.textContent = 'Network error';
-    saveStatus.className = 'save-status status-error';
+    showSaveStatus('Network error', true);
   }
 });
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function lines(str) {
+  return (str || '').split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+function showSaveStatus(msg, isError) {
+  const el = document.getElementById('saveStatus');
+  el.textContent = msg;
+  el.className = 'save-status' + (isError ? ' status-error' : ' status-ok');
+}
 
 function showToast(msg, isError) {
   const t = document.getElementById('toast');
