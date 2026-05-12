@@ -32,9 +32,14 @@ PREVIEW_TTL = 1800  # 30 minutes
 async def _fetch_live_preview() -> list[dict]:
     """Pull a live sample from HN Who's Hiring and Built In SF (no auth needed)."""
     import re
+    import ssl
     import aiohttp
+    import certifi
     today = date.today().isoformat()
     jobs: list[dict] = []
+
+    ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+    connector = aiohttp.TCPConnector(ssl=ssl_ctx)
 
     def _blank_row(extra: dict) -> dict:
         return {
@@ -47,23 +52,25 @@ async def _fetch_live_preview() -> list[dict]:
             **extra,
         }
 
-    # ── HN Who's Hiring (first 18 comments concurrently) ─────────────────────
+    # ── HN Who's Hiring (find thread via whoishiring user, fetch 20 concurrently) ──
     try:
-        algolia = "https://hn.algolia.com/api/v1/search_by_date"
         item_url = "https://hacker-news.firebaseio.com/v0/item/{}.json"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                algolia,
-                params={"query": "Ask HN: Who is hiring?", "tags": "story,ask_hn", "hitsPerPage": 1},
-                timeout=aiohttp.ClientTimeout(total=8),
-            ) as resp:
-                hits = (await resp.json()).get("hits", [])
-            if hits:
-                thread_id = hits[0]["objectID"]
-                async with session.get(item_url.format(thread_id), timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                    thread = await resp.json()
-                kid_ids = thread.get("kids", [])[:18]
+        user_url = "https://hacker-news.firebaseio.com/v0/user/whoishiring/submitted.json"
+        async with aiohttp.ClientSession(connector=connector) as session:
+            async with session.get(user_url, timeout=aiohttp.ClientTimeout(total=8)) as r:
+                submitted_ids = await r.json()
 
+            # Find the latest "Who is hiring?" thread (not "Who wants to be hired?")
+            thread_id = None
+            for sid in submitted_ids[:6]:
+                async with session.get(item_url.format(sid), timeout=aiohttp.ClientTimeout(total=5)) as r:
+                    story = await r.json()
+                if "Who is hiring" in (story.get("title") or ""):
+                    thread_id = sid
+                    kid_ids = story.get("kids", [])[:20]
+                    break
+
+            if thread_id:
                 async def _fetch_comment(kid_id: int) -> dict | None:
                     try:
                         async with session.get(item_url.format(kid_id), timeout=aiohttp.ClientTimeout(total=5)) as r:
@@ -73,10 +80,10 @@ async def _fetch_live_preview() -> list[dict]:
                             return None
                         first = re.sub(r"<[^>]+>", "", text.split("<p>")[0]).strip()
                         parts = [p.strip() for p in first.split("|")]
-                        company = parts[0] if parts else "Unknown"
-                        title   = parts[1] if len(parts) > 1 else "Software Engineer"
+                        company  = parts[0] if parts else "Unknown"
+                        title    = parts[1] if len(parts) > 1 else "Software Engineer"
                         location = parts[2] if len(parts) > 2 else "Remote"
-                        salary = next((p for p in parts if "$" in p or "k" in p.lower()), "")
+                        salary   = next((p for p in parts if "$" in p or "k" in p.lower()), "")
                         return _blank_row({
                             "_row_id": f"hn-{c['id']}",
                             "Company": company, "Job Title": title,
