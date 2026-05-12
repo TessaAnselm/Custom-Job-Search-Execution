@@ -1,11 +1,10 @@
 """
 Job scorer — multi-factor weighted scoring of a job against the user profile.
-Optionally uses OpenAI for richer explanation text.
+Uses the configured AI provider (see ai/client.py) for explanation text.
 """
 
-import os
 import re
-from openai import AsyncOpenAI
+from ai.client import complete_async
 
 
 class JobScorer:
@@ -127,26 +126,18 @@ class JobScorer:
         return 50.0  # Neutral
 
     async def _explain(self, job: dict, score: int, breakdown: dict) -> str:
-        """Use OpenAI to generate a human-readable explanation of the match."""
         try:
-            prompt = f"""
-You are helping someone evaluate a job posting. Given the scoring breakdown, write a 2-3 sentence
-explanation of WHY this job scores {score}/100 for this candidate. Be specific and honest.
-Focus on what's good and what's lacking. Keep it under 100 words.
-
-Job: {job.get('title')} at {job.get('company')} ({job.get('location')})
-Salary: {job.get('salary', 'not listed')}
-Score breakdown: {breakdown}
-Profile skills: {self.profile.get('skills', [])}
-Target titles: {self.profile.get('target_titles', [])}
-"""
-            response = await self.openai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=150,
+            prompt = (
+                f"You are helping someone evaluate a job posting. Write a 2-3 sentence "
+                f"explanation of WHY this job scores {score}/100. Be specific and honest. "
+                f"Focus on what's good and what's lacking. Keep it under 100 words.\n\n"
+                f"Job: {job.get('title')} at {job.get('company')} ({job.get('location')})\n"
+                f"Salary: {job.get('salary', 'not listed')}\n"
+                f"Score breakdown: {breakdown}\n"
+                f"Profile skills: {self.profile.get('skills', [])}\n"
+                f"Target titles: {self.profile.get('target_titles', [])}"
             )
-            return response.choices[0].message.content.strip()
+            return await complete_async(prompt, max_tokens=150)
         except Exception:
-            # Fallback to rule-based explanation
             top_factor = max(breakdown, key=breakdown.get)
             return f"Score {score}/100. Strongest signal: {top_factor.replace('_', ' ')} ({breakdown[top_factor]:.0f}/100)."

@@ -1,27 +1,38 @@
-# Temporal workflow engine
-temporalio>=1.5.0
+# ── Core ──────────────────────────────────────────────────────────────────────
+aiohttp>=3.9.0
+pyyaml>=6.0.1
+python-dotenv>=1.0.1
+flask>=3.0.0
+PyPDF2>=3.0.0
 
-# OpenAI (scoring explanations, resume tailoring, cover notes)
+# ── AI Providers (install the one matching your AI_PROVIDER setting) ──────────
+
+# Google Gemini — FREE tier (recommended)
+# AI_PROVIDER=gemini
+google-generativeai>=0.7.0
+
+# Anthropic Claude
+# AI_PROVIDER=anthropic
+anthropic>=0.28.0
+
+# Groq — FREE tier, fast open-source models
+# AI_PROVIDER=groq
+groq>=0.9.0
+
+# OpenAI — no free tier
+# AI_PROVIDER=openai
 openai>=1.30.0
 
-# HTTP client for scrapers and alerts
-aiohttp>=3.9.0
+# Ollama — 100% free, runs locally (install Ollama separately from https://ollama.com)
+# AI_PROVIDER=ollama
+ollama>=0.2.0
 
-# Google Sheets
+# ── Google Sheets ──────────────────────────────────────────────────────────────
 google-api-python-client>=2.130.0
 google-auth>=2.29.0
 
-# Config parsing
-pyyaml>=6.0.1
+# ── Temporal workflow engine ───────────────────────────────────────────────────
+temporalio>=1.5.0
 
-# LinkedIn scraper (optional — only needed if LinkedIn source is enabled)
+# ── LinkedIn scraper (only if LinkedIn source is enabled in sources.yaml) ──────
 playwright>=1.44.0
-
-# Environment loading
-python-dotenv>=1.0.1
-
-# Web dashboard
-flask>=3.0.0
-
-# PDF resume parsing (for upload feature)
-PyPDF2>=3.0.0

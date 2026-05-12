@@ -185,39 +185,32 @@ def extract_text_from_upload(file_storage) -> str:
 
 
 def gpt_extract_profile(resume_text: str) -> dict:
-    """Use OpenAI to extract a complete profile from resume text."""
+    """Extract a complete profile from resume text using the configured AI provider."""
     import json
-    from openai import OpenAI
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-    prompt = f"""You are a career profile parser. Extract a complete job-search profile from this resume.
-Return JSON only — no explanation, no markdown.
-
-Extract these fields:
-- name (string — full name from the resume header)
-- experience_years (integer — total years of professional experience, estimate from dates)
-- role_type (string — "IC" if individual contributor, "Manager" if they managed people, "Either" if both)
-- skills (list of strings — top 12-15 technical skills, tools, languages, frameworks)
-- target_titles (list of 4-6 strings — job titles this person should target based on their background)
-- location_preferred (list of strings — infer from their current city; always include "Remote" if their work history includes remote roles)
-- location_hard_no (list of strings — leave empty unless resume explicitly says they can't relocate)
-- salary_minimum (integer — conservative estimate in USD annual based on experience level and tech stack; 0 if unclear)
-- salary_target (integer — optimistic but realistic USD annual target; 0 if unclear)
-- industries_preferred (list of 3-5 strings — industries matching their background and likely interests)
-- industries_avoid (list of strings — leave empty unless resume gives clear signals)
-- summary (string — 2-3 sentence professional summary written in first person, based on their actual experience)
-
-Resume:
-{resume_text[:4000]}
-
-Return valid JSON matching exactly these field names."""
-
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=800,
-        response_format={"type": "json_object"},
+    from ai.client import complete_sync
+    prompt = (
+        "You are a career profile parser. Extract a complete job-search profile from this resume.\n"
+        "Return JSON only — no explanation, no markdown, no code fences.\n\n"
+        "Fields to extract:\n"
+        "- name (string)\n"
+        "- experience_years (integer — estimate from work history dates)\n"
+        "- role_type (string — IC, Manager, or Either)\n"
+        "- skills (list of 12-15 technical skills)\n"
+        "- target_titles (list of 4-6 job titles to target)\n"
+        "- location_preferred (list — infer from current city; include Remote if applicable)\n"
+        "- location_hard_no (list — empty unless resume says can't relocate)\n"
+        "- salary_minimum (integer USD annual, 0 if unclear)\n"
+        "- salary_target (integer USD annual, 0 if unclear)\n"
+        "- industries_preferred (list of 3-5 industries)\n"
+        "- industries_avoid (list — empty unless clear signals)\n"
+        "- summary (2-3 sentence first-person professional summary)\n\n"
+        f"Resume:\n{resume_text[:4000]}\n\n"
+        "Return valid JSON with exactly these field names."
     )
-    return json.loads(response.choices[0].message.content)
+    raw = complete_sync(prompt, max_tokens=800)
+    # Strip any accidental markdown fences
+    raw = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+    return json.loads(raw)
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
