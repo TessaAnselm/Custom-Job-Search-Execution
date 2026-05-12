@@ -217,6 +217,62 @@ def save_profile(data: dict):
         yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
 
+def get_local_region() -> dict:
+    """Detect the server's local timezone and return matching location keywords."""
+    import datetime
+    offset_h = datetime.datetime.now().astimezone().utcoffset().total_seconds() / 3600
+    if offset_h <= -7:
+        return {"label": "West Coast US", "abbr": "PT",
+                "keywords": ["remote (us)", "remote", "san francisco", "sf", "california",
+                             "pacific", "seattle", "los angeles", "west coast", "us"]}
+    if offset_h <= -5:
+        return {"label": "Central / Mountain US", "abbr": "CT/MT",
+                "keywords": ["remote (us)", "remote", "chicago", "denver", "mountain",
+                             "central", "us"]}
+    if offset_h <= -3:
+        return {"label": "East Coast US", "abbr": "ET",
+                "keywords": ["remote (us)", "remote", "new york", "nyc", "boston",
+                             "east coast", "us"]}
+    if offset_h <= 1:
+        return {"label": "UK / West Europe", "abbr": "GMT",
+                "keywords": ["remote (eu)", "remote", "uk", "london", "ireland",
+                             "amsterdam", "paris", "europe", "eu"]}
+    if offset_h <= 4:
+        return {"label": "Central / East Europe", "abbr": "CET",
+                "keywords": ["remote (eu)", "remote", "berlin", "amsterdam", "paris",
+                             "europe", "eu", "warsaw", "prague"]}
+    if offset_h <= 7:
+        return {"label": "Middle East / South Asia", "abbr": "IST",
+                "keywords": ["remote", "india", "dubai", "israel"]}
+    if offset_h <= 10:
+        return {"label": "East Asia", "abbr": "SGT",
+                "keywords": ["remote", "singapore", "hong kong", "china", "japan",
+                             "korea", "asia"]}
+    return {"label": "Asia Pacific", "abbr": "AEST",
+            "keywords": ["remote", "australia", "sydney", "melbourne", "auckland"]}
+
+
+def _location_score(location: str, region: dict) -> int:
+    """1 if job location matches local region, 0 otherwise."""
+    import re
+    loc = location.lower()
+    abbr = region["abbr"]
+    # Detect explicit region restrictions in the location string
+    is_eu_only  = bool(re.search(r'\beu only\b|remote.*eu\b|\(eu\b|europe only', loc))
+    is_us_only  = bool(re.search(r'\bus only\b|remote.*\(us\b|north america only', loc))
+    is_asia_only = bool(re.search(r'\basia only\b|apac only', loc))
+    is_us_region = abbr in ("PT", "CT/MT", "ET")
+    is_eu_region = abbr in ("GMT", "CET")
+    # Explicit conflicts: EU-only job for US user, US-only job for EU user
+    if is_eu_only and is_us_region:
+        return 0
+    if is_us_only and is_eu_region:
+        return 0
+    if is_asia_only and (is_us_region or is_eu_region):
+        return 0
+    return 1 if any(kw in loc for kw in region["keywords"]) else 0
+
+
 def update_status(row_id, status, notes=""):
     try:
         from sheets.client import SheetsClient
@@ -312,6 +368,14 @@ def index():
     jobs = get_jobs(status_filter=status_filter, min_score=min_score)
     stats = get_stats()
     live = using_live_data()
+    region = get_local_region()
+
+    # In preview mode, tag and sort timezone-matching jobs to the top
+    if not live:
+        for j in jobs:
+            j["_tz_match"] = bool(_location_score(j.get("Location", ""), region))
+        jobs = sorted(jobs, key=lambda j: j["_tz_match"], reverse=True)
+
     return render_template(
         "dashboard.html",
         jobs=jobs,
@@ -320,6 +384,7 @@ def index():
         min_score=min_score,
         using_live=live,
         using_preview=not live,
+        region=region,
     )
 
 

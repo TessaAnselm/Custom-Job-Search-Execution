@@ -36,7 +36,7 @@
   <!-- Preview banner -->
   <div class="preview-banner">
     <span class="preview-icon">&#127759;</span>
-    <span>Live jobs from <strong>HN Who's Hiring</strong> and <strong>Built In SF</strong> — unscored. Run a full search to score and filter them against your profile.</span>
+    <span>Live jobs from <strong>HN Who's Hiring</strong> and <strong>Built In SF</strong> — sorted by your timezone (<strong>{{ region.label }}</strong>). Unscored until you run a full search.</span>
     <button class="btn btn-sm btn-primary" id="triggerSearchBtn2" style="margin-left:auto">Run scored search</button>
   </div>
   {% endif %}
@@ -113,7 +113,12 @@
           <td>
             <a class="job-title-link" href="/job/{{ job['_row_id'] }}">{{ job['Job Title'] }}</a>
           </td>
-          <td class="muted">{{ job['Location'] }}</td>
+          <td class="muted">
+            {{ job['Location'] }}
+            {% if job.get('_tz_match') %}
+              <span class="tz-match" title="{{ region.label }}">{{ region.abbr }}</span>
+            {% endif %}
+          </td>
           <td class="muted">{{ job['Salary'] or '—' }}</td>
           <td><span class="source-tag">{{ job['Source'] }}</span></td>
           <td>
