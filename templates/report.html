@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report — Job Search</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <a href="/" style="text-decoration:none;color:inherit">
+        <span class="logo-icon">&#127919;</span>
+        <span>Job Search</span>
+      </a>
+    </div>
+    <nav class="header-nav">
+      <a href="/">Dashboard</a>
+      <a href="/report" class="active">Report</a>
+      <a href="/profile">Profile</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/report/export" class="btn btn-ghost">Export CSV</a>
+    </div>
+  </div>
+</header>
+
+<main style="max-width:1100px;margin:0 auto;padding:1.5rem;">
+
+  <div class="page-header">
+    <h1>Application Report</h1>
+    <p class="page-subtitle">Generated {{ generated_at }}</p>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="report-stats">
+    <div class="report-stat">
+      <span class="report-stat-value">{{ stats.total_tracked }}</span>
+      <span class="report-stat-label">Jobs Tracked</span>
+    </div>
+    <div class="report-stat">
+      <span class="report-stat-value">{{ stats.applied }}</span>
+      <span class="report-stat-label">Applied</span>
+    </div>
+    <div class="report-stat">
+      <span class="report-stat-value">{{ stats.interviews }}</span>
+      <span class="report-stat-label">Interviews</span>
+    </div>
+    <div class="report-stat">
+      <span class="report-stat-value">{{ stats.response_rate }}</span>
+      <span class="report-stat-label">Response Rate</span>
+    </div>
+    <div class="report-stat">
+      <span class="report-stat-value">{{ stats.avg_score }}</span>
+      <span class="report-stat-label">Avg Match Score</span>
+    </div>
+    <div class="report-stat">
+      <span class="report-stat-value">{{ stats.pending_followup }}</span>
+      <span class="report-stat-label">Pending Follow-up</span>
+    </div>
+  </div>
+
+  <!-- Source breakdown -->
+  {% if source_breakdown %}
+  <div class="detail-card" style="margin-bottom:1rem;">
+    <h3>Applications by Source</h3>
+    <div class="source-bars">
+      {% for source, count in source_breakdown.items() %}
+      <div class="source-bar-row">
+        <span class="source-bar-label">{{ source }}</span>
+        <div class="source-bar-track">
+          <div class="source-bar-fill" style="width:{{ (count / stats.applied * 100) | int if stats.applied else 0 }}%"></div>
+        </div>
+        <span class="source-bar-count">{{ count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Applications table -->
+  <div class="detail-card" style="padding:0;overflow:hidden;">
+    <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <h3 style="margin:0;">Applications Timeline</h3>
+      <div style="display:flex;gap:.5rem;">
+        <select id="statusFilter" class="filter-select" onchange="filterTable()">
+          <option value="">All statuses</option>
+          <option value="Applied">Applied</option>
+          <option value="Follow Up">Follow Up</option>
+          <option value="Interview">Interview</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Ready to Apply">Ready to Apply</option>
+        </select>
+      </div>
+    </div>
+    <table class="job-table" id="reportTable">
+      <thead>
+        <tr>
+          <th>Date Applied</th>
+          <th>Company</th>
+          <th>Title</th>
+          <th>Score</th>
+          <th>Source</th>
+          <th>Status</th>
+          <th>Follow Up</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr class="report-row" data-status="{{ job['Status'] }}">
+          <td style="white-space:nowrap;color:var(--text-dim)">{{ job['Date Found'] }}</td>
+          <td><strong>{{ job['Company'] }}</strong></td>
+          <td>
+            <a class="job-title-link" href="/job/{{ job['_row_id'] }}">{{ job['Job Title'] }}</a>
+          </td>
+          <td>
+            <span class="score-badge score-{{ 'high' if job['Match Score']|int >= 75 else ('mid' if job['Match Score']|int >= 55 else 'low') }}">
+              {{ job['Match Score'] }}
+            </span>
+          </td>
+          <td><span class="source-tag">{{ job['Source'] }}</span></td>
+          <td>
+            <span class="status-pill status-pill-{{ job['Status']|lower|replace(' ', '-') }}">
+              {{ job['Status'] }}
+            </span>
+          </td>
+          <td style="color:var(--text-dim);font-size:12px;">
+            {% if job['Follow Up Date'] %}
+              <span class="{% if job['Follow Up Date'] < today %}followup-overdue{% endif %}">
+                {{ job['Follow Up Date'] }}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td style="color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ job['Notes'] or '—' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-dim)">No applications tracked yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<script>
+function filterTable() {
+  const val = document.getElementById('statusFilter').value;
+  document.querySelectorAll('.report-row').forEach(row => {
+    row.style.display = (!val || row.dataset.status === val) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

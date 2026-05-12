@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — Job Search</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <a href="/" style="text-decoration:none;color:inherit">
+        <span class="logo-icon">&#127919;</span>
+        <span>Job Search</span>
+      </a>
+    </div>
+    <nav class="header-nav">
+      <a href="/">Dashboard</a>
+      <a href="/report">Report</a>
+      <a href="/profile" class="active">Profile</a>
+    </nav>
+  </div>
+</header>
+
+<main class="detail-main">
+
+  <div class="page-header">
+    <h1>Your Profile</h1>
+    <p class="page-subtitle">This profile drives job scoring and resume/cover note generation. Upload your resume to auto-populate it, or edit fields directly.</p>
+  </div>
+
+  <!-- Resume Upload Card -->
+  <div class="detail-card upload-card">
+    <h3>Upload Resume</h3>
+    <p style="color:var(--text-dim);margin-bottom:1rem;">
+      Upload a PDF or plain text resume. The system will extract your name, skills, and experience and fill in the fields below automatically.
+    </p>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="resumeFile" accept=".pdf,.txt,.doc,.docx" hidden />
+      <div class="upload-icon">&#128196;</div>
+      <p class="upload-label">Drop your resume here or <span class="upload-link" onclick="document.getElementById('resumeFile').click()">browse</span></p>
+      <p class="upload-hint">PDF or plain text · Max 5MB</p>
+    </div>
+    <div id="uploadStatus" class="upload-status hidden"></div>
+  </div>
+
+  <!-- Profile Form -->
+  <form id="profileForm">
+    <div class="form-grid">
+
+      <div class="detail-card">
+        <h3>Identity</h3>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" value="{{ profile.get('name', '') }}" placeholder="Your Name" />
+        </div>
+        <div class="form-group">
+          <label>Years of Experience</label>
+          <input type="number" name="experience_years" value="{{ profile.get('experience_years', '') }}" placeholder="3" min="0" max="50" />
+        </div>
+        <div class="form-group">
+          <label>Role Type</label>
+          <select name="role_type">
+            <option value="IC" {% if profile.get('role_type') == 'IC' %}selected{% endif %}>Individual Contributor (IC)</option>
+            <option value="Manager" {% if profile.get('role_type') == 'Manager' %}selected{% endif %}>Manager</option>
+            <option value="Either" {% if profile.get('role_type') == 'Either' %}selected{% endif %}>Either</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Target Roles</h3>
+        <div class="form-group">
+          <label>Target Titles <span class="hint">one per line</span></label>
+          <textarea name="target_titles" rows="5" placeholder="Security Engineer&#10;AppSec Engineer&#10;DevSecOps Engineer">{{ profile.get('target_titles', []) | join('\n') }}</textarea>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Skills</h3>
+        <div class="form-group">
+          <label>Your Skills <span class="hint">one per line</span></label>
+          <textarea name="skills" rows="8" placeholder="Python&#10;Linux&#10;Kubernetes&#10;OWASP">{{ profile.get('skills', []) | join('\n') }}</textarea>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Location & Salary</h3>
+        <div class="form-group">
+          <label>Preferred Locations <span class="hint">one per line</span></label>
+          <textarea name="location_preferred" rows="3" placeholder="Remote&#10;San Francisco">{{ profile.get('location', {}).get('preferred', []) | join('\n') }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Hard No Locations <span class="hint">one per line</span></label>
+          <textarea name="location_hard_no" rows="2" placeholder="Requires Relocation">{{ profile.get('location', {}).get('hard_no', []) | join('\n') }}</textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Minimum Salary ($)</label>
+            <input type="number" name="salary_minimum" value="{{ profile.get('salary', {}).get('minimum', '') }}" placeholder="100000" />
+          </div>
+          <div class="form-group">
+            <label>Target Salary ($)</label>
+            <input type="number" name="salary_target" value="{{ profile.get('salary', {}).get('target', '') }}" placeholder="140000" />
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Industries</h3>
+        <div class="form-group">
+          <label>Preferred Industries <span class="hint">one per line</span></label>
+          <textarea name="industries_preferred" rows="4" placeholder="Cybersecurity&#10;Dev Tools&#10;Fintech">{{ profile.get('industries', {}).get('preferred', []) | join('\n') }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Industries to Avoid <span class="hint">one per line</span></label>
+          <textarea name="industries_avoid" rows="3" placeholder="Gambling&#10;AdTech">{{ profile.get('industries', {}).get('avoid', []) | join('\n') }}</textarea>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Scoring Weights <span class="hint">must add up to 1.0</span></h3>
+        {% set weights = profile.get('scoring_weights', {}) %}
+        <div class="form-row">
+          <div class="form-group">
+            <label>Title Match</label>
+            <input type="number" name="w_title" value="{{ weights.get('title_match', 0.30) }}" step="0.05" min="0" max="1" />
+          </div>
+          <div class="form-group">
+            <label>Skills</label>
+            <input type="number" name="w_skills" value="{{ weights.get('skills_match', 0.25) }}" step="0.05" min="0" max="1" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Salary</label>
+            <input type="number" name="w_salary" value="{{ weights.get('salary_match', 0.20) }}" step="0.05" min="0" max="1" />
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="number" name="w_location" value="{{ weights.get('location_match', 0.15) }}" step="0.05" min="0" max="1" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Industry</label>
+            <input type="number" name="w_industry" value="{{ weights.get('industry_match', 0.10) }}" step="0.05" min="0" max="1" />
+          </div>
+          <div class="form-group">
+            <label>Min Score (0–100)</label>
+            <input type="number" name="minimum_score" value="{{ profile.get('minimum_score', 65) }}" min="0" max="100" />
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card full-width">
+        <h3>Base Resume <span class="hint">used for AI tailoring and cover note drafts</span></h3>
+        <div class="form-group">
+          <textarea name="base_resume" rows="18" id="baseResumeText" placeholder="Paste your resume text here...">{{ profile.get('base_resume', '') }}</textarea>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save Profile</button>
+      <span id="saveStatus" class="save-status"></span>
+    </div>
+  </form>
+
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="/static/js/profile.js"></script>
+</body>
+</html>

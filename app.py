@@ -2,21 +2,28 @@
 Job Search Dashboard — Flask web UI.
 
 Run with:
-    pip install flask python-dotenv
+    pip install flask python-dotenv pypdf2
     python3 app.py
 
 Open http://localhost:5050
 """
 
 import os
+import io
+import csv
 import asyncio
-from flask import Flask, render_template, jsonify, request, redirect, url_for
+import yaml
+from datetime import datetime, date
+from flask import Flask, render_template, jsonify, request, Response
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+PROFILE_PATH = os.path.join(os.path.dirname(__file__), "config", "profile.yaml")
+RESUMES_DIR  = os.path.join(os.path.dirname(__file__), "resumes")
 
 DEMO_JOBS = [
     {
@@ -75,13 +82,18 @@ DEMO_JOBS = [
 ]
 
 
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def using_live_data():
+    return bool(os.getenv("GOOGLE_SHEETS_ID") and os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
+
+
 def get_jobs(status_filter=None, min_score=0):
     try:
         from sheets.client import SheetsClient
-        sheets = SheetsClient()
-        return sheets.list_jobs(status_filter=status_filter, min_score=min_score)
+        return SheetsClient().list_jobs(status_filter=status_filter, min_score=min_score)
     except Exception:
-        jobs = DEMO_JOBS
+        jobs = list(DEMO_JOBS)
         if status_filter:
             jobs = [j for j in jobs if j.get("Status") == status_filter]
         if min_score:
@@ -92,8 +104,7 @@ def get_jobs(status_filter=None, min_score=0):
 def get_stats():
     try:
         from sheets.client import SheetsClient
-        sheets = SheetsClient()
-        return sheets.get_stats()
+        return SheetsClient().get_stats()
     except Exception:
         stats = {}
         for job in DEMO_JOBS:
@@ -102,17 +113,30 @@ def get_stats():
         return stats
 
 
+def load_profile() -> dict:
+    if os.path.exists(PROFILE_PATH):
+        with open(PROFILE_PATH) as f:
+            return yaml.safe_load(f) or {}
+    example = PROFILE_PATH + ".example"
+    if os.path.exists(example):
+        with open(example) as f:
+            return yaml.safe_load(f) or {}
+    return {}
+
+
+def save_profile(data: dict):
+    os.makedirs(os.path.dirname(PROFILE_PATH), exist_ok=True)
+    with open(PROFILE_PATH, "w") as f:
+        yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+
 def update_status(row_id, status, notes=""):
     try:
         from sheets.client import SheetsClient
-        sheets = SheetsClient()
-        sheets.update_status(row_id, status, notes or None)
-
-        # Also signal Temporal if it's running
+        SheetsClient().update_status(row_id, status, notes or None)
         try:
             from temporal.workflows.job_search_workflow import JobProcessingWorkflow, ApprovalDecision
             from temporalio.client import Client
-
             decision_map = {
                 "Ready to Apply": ApprovalDecision.APPLY,
                 "Skip": ApprovalDecision.SKIP,
@@ -128,9 +152,8 @@ def update_status(row_id, status, notes=""):
                     await handle.signal(JobProcessingWorkflow.decide, decision_map[status], notes or None)
                 asyncio.run(_signal())
         except Exception:
-            pass  # Temporal not running — sheet update is enough
+            pass
     except Exception:
-        # Demo mode — just update in-memory list
         for job in DEMO_JOBS:
             if job["_row_id"] == str(row_id):
                 job["Status"] = status
@@ -139,22 +162,71 @@ def update_status(row_id, status, notes=""):
                 break
 
 
+def resume_path_for_job(job: dict) -> str | None:
+    filename = job.get("Resume Version", "")
+    if filename:
+        path = os.path.join(RESUMES_DIR, filename)
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def extract_text_from_upload(file_storage) -> str:
+    filename = file_storage.filename.lower()
+    raw = file_storage.read()
+    if filename.endswith(".pdf"):
+        try:
+            import PyPDF2
+            reader = PyPDF2.PdfReader(io.BytesIO(raw))
+            return "\n".join(page.extract_text() or "" for page in reader.pages)
+        except ImportError:
+            return raw.decode("utf-8", errors="ignore")
+    return raw.decode("utf-8", errors="ignore")
+
+
+def gpt_extract_profile(resume_text: str) -> dict:
+    """Use OpenAI to extract structured profile fields from resume text."""
+    import json
+    from openai import OpenAI
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    prompt = f"""Extract structured information from this resume. Return JSON only, no explanation.
+
+Fields to extract:
+- name (string)
+- experience_years (integer, estimate from work history)
+- skills (list of strings, top 10-15 technical skills)
+- target_titles (list of strings, 3-5 job titles this person would target based on their background)
+
+Resume:
+{resume_text[:3000]}
+
+Return valid JSON like:
+{{"name": "...", "experience_years": 3, "skills": [...], "target_titles": [...]}}"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=400,
+        response_format={"type": "json_object"},
+    )
+    return json.loads(response.choices[0].message.content)
+
+
+# ── Routes ───────────────────────────────────────────────────────────────────
+
 @app.route("/")
 def index():
     status_filter = request.args.get("status")
     min_score = int(request.args.get("min_score", 0))
     jobs = get_jobs(status_filter=status_filter, min_score=min_score)
     stats = get_stats()
-
-    using_demo = not (os.getenv("GOOGLE_SHEETS_ID") and os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
-
     return render_template(
         "dashboard.html",
         jobs=jobs,
         stats=stats,
         status_filter=status_filter or "",
         min_score=min_score,
-        using_demo=using_demo,
+        using_demo=not using_live_data(),
     )
 
 
@@ -164,27 +236,173 @@ def job_detail(row_id):
     job = next((j for j in jobs if j.get("_row_id") == row_id), None)
     if not job:
         return "Job not found", 404
-    return render_template("job_detail.html", job=job)
+    resume_content = ""
+    path = resume_path_for_job(job)
+    if path:
+        with open(path) as f:
+            resume_content = f.read()
+    return render_template("job_detail.html", job=job, resume_content=resume_content)
 
+
+@app.route("/profile")
+def profile_page():
+    return render_template("profile.html", profile=load_profile())
+
+
+@app.route("/report")
+def report():
+    all_jobs = get_jobs()
+    tracked_statuses = {"Applied", "Follow Up", "Interview", "Rejected", "Ready to Apply", "Offer"}
+    jobs = [j for j in all_jobs if j.get("Status") in tracked_statuses]
+    jobs.sort(key=lambda j: j.get("Date Found", ""), reverse=True)
+
+    applied_statuses = {"Applied", "Follow Up", "Interview", "Rejected", "Offer"}
+    applied = [j for j in all_jobs if j.get("Status") in applied_statuses]
+    interviews = [j for j in all_jobs if j.get("Status") == "Interview"]
+    pending_followup = [j for j in all_jobs if j.get("Status") == "Follow Up"]
+    response_rate = f"{int(len(interviews) / len(applied) * 100)}%" if applied else "—"
+
+    scores = [int(j.get("Match Score", 0) or 0) for j in applied if j.get("Match Score")]
+    avg_score = str(int(sum(scores) / len(scores))) if scores else "—"
+
+    source_breakdown: dict[str, int] = {}
+    for j in applied:
+        s = j.get("Source", "unknown")
+        source_breakdown[s] = source_breakdown.get(s, 0) + 1
+    source_breakdown = dict(sorted(source_breakdown.items(), key=lambda x: x[1], reverse=True))
+
+    stats = {
+        "total_tracked": len(all_jobs),
+        "applied": len(applied),
+        "interviews": len(interviews),
+        "response_rate": response_rate,
+        "avg_score": avg_score,
+        "pending_followup": len(pending_followup),
+    }
+    return render_template(
+        "report.html",
+        jobs=jobs,
+        stats=stats,
+        source_breakdown=source_breakdown,
+        generated_at=datetime.now().strftime("%B %d, %Y at %I:%M %p"),
+        today=date.today().isoformat(),
+    )
+
+
+@app.route("/report/export")
+def report_export():
+    all_jobs = get_jobs()
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=[
+        "Date Found", "Company", "Job Title", "Location", "Salary",
+        "Match Score", "Source", "Status", "Contact Name",
+        "Follow Up Date", "Notes", "Job URL",
+    ])
+    writer.writeheader()
+    for job in all_jobs:
+        writer.writerow({k: job.get(k, "") for k in writer.fieldnames})
+    filename = f"job-report-{date.today().isoformat()}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+# ── API ───────────────────────────────────────────────────────────────────────
 
 @app.route("/api/approve", methods=["POST"])
 def api_approve():
     data = request.get_json()
     row_id = data.get("row_id")
-    action = data.get("action")   # apply | skip | later
+    action = data.get("action")
     notes = data.get("notes", "")
-
-    status_map = {
-        "apply": "Ready to Apply",
-        "skip": "Skip",
-        "later": "Tailor Resume",
-    }
+    status_map = {"apply": "Ready to Apply", "skip": "Skip", "later": "Tailor Resume"}
     status = status_map.get(action)
     if not status:
         return jsonify({"error": f"Unknown action: {action}"}), 400
-
     update_status(row_id, status, notes)
     return jsonify({"ok": True, "row_id": row_id, "status": status})
+
+
+@app.route("/api/save-profile", methods=["POST"])
+def api_save_profile():
+    try:
+        data = request.get_json()
+        save_profile(data)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/upload-resume", methods=["POST"])
+def api_upload_resume():
+    if "resume" not in request.files:
+        return jsonify({"ok": False, "error": "No file uploaded"}), 400
+    f = request.files["resume"]
+    try:
+        text = extract_text_from_upload(f)
+        extracted = {"base_resume": text.strip()}
+        if os.getenv("OPENAI_API_KEY"):
+            try:
+                structured = gpt_extract_profile(text)
+                extracted.update(structured)
+            except Exception:
+                pass  # Proceed with just the raw text
+        return jsonify({"ok": True, "extracted": extracted})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/save-resume/<row_id>", methods=["POST"])
+def api_save_resume(row_id):
+    data = request.get_json()
+    content = data.get("content", "")
+    try:
+        jobs = get_jobs()
+        job = next((j for j in jobs if j.get("_row_id") == row_id), None)
+        if not job:
+            return jsonify({"ok": False, "error": "Job not found"}), 404
+
+        os.makedirs(RESUMES_DIR, exist_ok=True)
+        existing = job.get("Resume Version", "")
+        if existing:
+            filename = existing
+        else:
+            safe_co = "".join(c if c.isalnum() else "_" for c in job.get("Company", "company"))
+            safe_ti = "".join(c if c.isalnum() else "_" for c in job.get("Job Title", "role"))
+            filename = f"resume_{safe_co}_{safe_ti}_{row_id}.txt"
+
+        path = os.path.join(RESUMES_DIR, filename)
+        with open(path, "w") as out:
+            out.write(content)
+        return jsonify({"ok": True, "filename": filename})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/generate-resume/<row_id>", methods=["POST"])
+def api_generate_resume(row_id):
+    try:
+        jobs = get_jobs()
+        job = next((j for j in jobs if j.get("_row_id") == row_id), None)
+        if not job:
+            return jsonify({"ok": False, "error": "Job not found"}), 404
+
+        profile = load_profile()
+        if not profile.get("base_resume"):
+            return jsonify({"ok": False, "error": "No base resume in your profile. Go to Profile and add it first."}), 400
+
+        from ai.resume_tailor import ResumeTailor
+        tailor = ResumeTailor()
+
+        async def _gen():
+            return await tailor.tailor(job, profile)
+
+        content = asyncio.run(_gen())
+        return jsonify({"ok": True, "content": content})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.route("/api/trigger-search", methods=["POST"])
@@ -193,7 +411,6 @@ def api_trigger_search():
         from temporalio.client import Client
         from temporal.workflows.job_search_workflow import JobSearchWorkflow, JobSearchParams
         import uuid
-
         run_id = str(uuid.uuid4())[:8]
         params = JobSearchParams(run_id=run_id)
 
@@ -203,10 +420,8 @@ def api_trigger_search():
                 namespace=os.getenv("TEMPORAL_NAMESPACE", "default"),
             )
             handle = await client.start_workflow(
-                JobSearchWorkflow.run,
-                params,
-                id=f"job-search-{run_id}",
-                task_queue="job-search-queue",
+                JobSearchWorkflow.run, params,
+                id=f"job-search-{run_id}", task_queue="job-search-queue",
             )
             return handle.id
 

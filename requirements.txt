@@ -19,3 +19,9 @@ playwright>=1.44.0
 
 # Environment loading
 python-dotenv>=1.0.1
+
+# Web dashboard
+flask>=3.0.0
+
+# PDF resume parsing (for upload feature)
+PyPDF2>=3.0.0

@@ -16,6 +16,11 @@
         <span>Back</span>
       </a>
     </div>
+    <nav class="header-nav">
+      <a href="/">Dashboard</a>
+      <a href="/report">Report</a>
+      <a href="/profile">Profile</a>
+    </nav>
     <div class="header-actions">
       {% set score = job['Match Score']|int %}
       <span class="score-badge score-{{ 'high' if score >= 75 else ('mid' if score >= 55 else 'low') }} score-lg">
@@ -58,12 +63,21 @@
     </div>
     {% endif %}
 
-    {% if job['Resume Version'] %}
     <div class="detail-card">
-      <h3>Tailored resume</h3>
-      <p><code>{{ job['Resume Version'] }}</code></p>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+        <h3 style="margin:0;">Tailored Resume</h3>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          {% if not resume_content %}
+          <button class="btn btn-ghost btn-sm" id="generateResumeBtn" onclick="generateResume('{{ job['_row_id'] }}')">Generate</button>
+          {% endif %}
+          <button class="btn btn-primary btn-sm" id="saveResumeBtn" onclick="saveResume('{{ job['_row_id'] }}')">Save</button>
+        </div>
+      </div>
+      {% if job['Resume Version'] %}
+      <p style="font-size:11px;color:var(--text-dim);margin-bottom:.5rem;">File: <code>{{ job['Resume Version'] }}</code></p>
+      {% endif %}
+      <textarea id="resumeEditor" class="resume-editor" rows="20" placeholder="No tailored resume yet. Click Generate to create one, or paste your resume text here and save.">{{ resume_content or '' }}</textarea>
     </div>
-    {% endif %}
 
     <div class="detail-card detail-meta-card">
       <h3>Details</h3>
@@ -116,7 +130,41 @@ function showToast(msg, isError) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast' + (isError ? ' toast-error' : '');
-  setTimeout(() => t.classList.add('hidden'), 2500);
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+function saveResume(rowId) {
+  const content = document.getElementById('resumeEditor').value;
+  fetch(`/api/save-resume/${rowId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) showToast('Resume saved — ' + data.filename);
+      else showToast('Save failed: ' + (data.error || 'unknown'), true);
+    });
+}
+
+function generateResume(rowId) {
+  const btn = document.getElementById('generateResumeBtn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  fetch(`/api/generate-resume/${rowId}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        document.getElementById('resumeEditor').value = data.content;
+        showToast('Resume generated');
+        btn.textContent = 'Regenerate';
+      } else {
+        showToast('Generate failed: ' + (data.error || 'unknown'), true);
+        btn.textContent = 'Generate';
+      }
+      btn.disabled = false;
+    });
 }
 </script>
 </body>
