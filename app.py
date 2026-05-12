@@ -257,20 +257,28 @@ def _location_score(location: str, region: dict) -> int:
     import re
     loc = location.lower()
     abbr = region["abbr"]
-    # Detect explicit region restrictions in the location string
-    is_eu_only  = bool(re.search(r'\beu only\b|remote.*eu\b|\(eu\b|europe only', loc))
-    is_us_only  = bool(re.search(r'\bus only\b|remote.*\(us\b|north america only', loc))
+    # Detect explicit region restrictions
+    is_eu_only   = bool(re.search(r'\beu only\b|\(eu\b|europe only|remote.*eu only', loc))
+    is_us_only   = bool(re.search(r'\bus only\b|north america only', loc))
     is_asia_only = bool(re.search(r'\basia only\b|apac only', loc))
     is_us_region = abbr in ("PT", "CT/MT", "ET")
     is_eu_region = abbr in ("GMT", "CET")
-    # Explicit conflicts: EU-only job for US user, US-only job for EU user
     if is_eu_only and is_us_region:
         return 0
     if is_us_only and is_eu_region:
         return 0
     if is_asia_only and (is_us_region or is_eu_region):
         return 0
-    return 1 if any(kw in loc for kw in region["keywords"]) else 0
+    # Use word-boundary matching for short ambiguous keywords (us, sf, uk, eu)
+    # to avoid matching "us" inside "austin", "various", "futo", etc.
+    for kw in region["keywords"]:
+        if len(kw) <= 3:
+            if re.search(rf'\b{re.escape(kw)}\b', loc):
+                return 1
+        else:
+            if kw in loc:
+                return 1
+    return 0
 
 
 def update_status(row_id, status, notes=""):
