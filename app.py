@@ -32,6 +32,7 @@ PREVIEW_TTL = 1800  # 30 minutes
 async def _fetch_live_preview() -> list[dict]:
     """Pull a live sample from HN Who's Hiring and Built In SF (no auth needed)."""
     import re
+    import html as htmllib
     import ssl
     import aiohttp
     import certifi
@@ -78,7 +79,7 @@ async def _fetch_live_preview() -> list[dict]:
                         text = c.get("text", "") or ""
                         if not text or c.get("dead") or c.get("deleted"):
                             return None
-                        first = re.sub(r"<[^>]+>", "", text.split("<p>")[0]).strip()
+                        first = htmllib.unescape(re.sub(r"<[^>]+>", "", text.split("<p>")[0])).strip()
                         parts = [p.strip() for p in first.split("|")]
                         company  = parts[0] if parts else "Unknown"
                         title    = parts[1] if len(parts) > 1 else "Software Engineer"
