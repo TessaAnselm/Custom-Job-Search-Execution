@@ -72,6 +72,18 @@ async def _fetch_live_preview() -> list[dict]:
                     break
 
             if thread_id:
+                _BAD_COMPANY = re.compile(
+                    r'[$#`{}\\]|error:|warning:|cargo |failed to|>>>|^\s*http'
+                )
+                # Matches explicit location keywords OR "City, State/Country" patterns
+                _LOCATION_WORDS = re.compile(
+                    r'\b(remote|usa|us\b|uk\b|eu\b|nyc|sf\b|berlin|london|paris|amsterdam|'
+                    r'austin|seattle|boston|chicago|toronto|sydney|singapore|helsinki|'
+                    r'full.time|part.time|hybrid|onsite|on.site|in.person|anywhere)\b'
+                    r'|^[A-Za-z][A-Za-z\s\-]+,\s*[A-Za-z]{2,}',  # "City, Country/State"
+                    re.IGNORECASE,
+                )
+
                 async def _fetch_comment(kid_id: int) -> dict | None:
                     try:
                         async with session.get(item_url.format(kid_id), timeout=aiohttp.ClientTimeout(total=5)) as r:
@@ -81,10 +93,39 @@ async def _fetch_live_preview() -> list[dict]:
                             return None
                         first = htmllib.unescape(re.sub(r"<[^>]+>", "", text.split("<p>")[0])).strip()
                         parts = [p.strip() for p in first.split("|")]
-                        company  = parts[0] if parts else "Unknown"
-                        title    = parts[1] if len(parts) > 1 else "Software Engineer"
-                        location = parts[2] if len(parts) > 2 else "Remote"
-                        salary   = next((p for p in parts if "$" in p or "k" in p.lower()), "")
+
+                        # Need at least company + one more field
+                        if len(parts) < 2:
+                            return None
+                        company = parts[0]
+                        # Skip if company field looks like code or is too long
+                        if len(company) > 80 or _BAD_COMPANY.search(company):
+                            return None
+
+                        # Detect and skip parts that are URLs (some companies put URL in role field)
+                        clean_parts = [p for p in parts if not p.startswith("http")]
+
+                        company  = clean_parts[0] if clean_parts else parts[0]
+                        _EMP_TYPE = re.compile(r'^(full.time|part.time|contract|freelance|intern)$', re.IGNORECASE)
+                        _IS_ROLE  = re.compile(
+                            r'\b(engineer|developer|manager|designer|analyst|scientist|'
+                            r'architect|lead|senior|junior|staff|principal|founding|'
+                            r'director|vp|head of|roles|positions)\b',
+                            re.IGNORECASE,
+                        )
+                        # Title: prefer parts that contain role words; fallback to first non-location part
+                        title = (
+                            next((p for p in clean_parts[1:] if _IS_ROLE.search(p)), None)
+                            or next((p for p in clean_parts[1:] if not _LOCATION_WORDS.search(p) and not _EMP_TYPE.match(p)), None)
+                            or "Software Engineer"
+                        )
+                        # Location: first part that looks like a place and isn't a role
+                        location = next(
+                            (p for p in clean_parts[1:] if _LOCATION_WORDS.search(p) and not _IS_ROLE.search(p)),
+                            "Remote",
+                        )
+                        salary   = next((p for p in parts if re.search(r'\$[\d,]+|\d+k', p, re.IGNORECASE)), "")
+
                         return _blank_row({
                             "_row_id": f"hn-{c['id']}",
                             "Company": company, "Job Title": title,
