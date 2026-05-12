@@ -14,7 +14,7 @@ import csv
 import asyncio
 import yaml
 from datetime import datetime, date
-from flask import Flask, render_template, jsonify, request, Response
+from flask import Flask, render_template, jsonify, request, Response, redirect
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -217,6 +217,9 @@ def gpt_extract_profile(resume_text: str) -> dict:
 
 @app.route("/")
 def index():
+    # First-time users: redirect to profile setup before showing jobs
+    if not os.path.exists(PROFILE_PATH) or not load_profile().get("name"):
+        return redirect("/profile")
     status_filter = request.args.get("status")
     min_score = int(request.args.get("min_score", 0))
     jobs = get_jobs(status_filter=status_filter, min_score=min_score)
@@ -345,7 +348,16 @@ def api_upload_resume():
         text = extract_text_from_upload(f)
         extracted = {"base_resume": text.strip()}
 
-        if os.getenv("OPENAI_API_KEY"):
+        provider = os.getenv("AI_PROVIDER", "openai")
+        has_key = {
+            "gemini":    bool(os.getenv("GOOGLE_API_KEY")),
+            "anthropic": bool(os.getenv("ANTHROPIC_API_KEY")),
+            "groq":      bool(os.getenv("GROQ_API_KEY")),
+            "openai":    bool(os.getenv("OPENAI_API_KEY")),
+            "ollama":    True,
+        }.get(provider, False)
+
+        if has_key:
             structured = gpt_extract_profile(text)
             extracted.update(structured)
 

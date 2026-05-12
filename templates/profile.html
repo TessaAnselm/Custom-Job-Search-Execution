@@ -17,9 +17,9 @@
       </a>
     </div>
     <nav class="header-nav">
-      <a href="/">Dashboard</a>
-      <a href="/report">Report</a>
       <a href="/profile" class="active">Profile</a>
+      <a href="/">Jobs</a>
+      <a href="/report">Report</a>
     </nav>
   </div>
 </header>
@@ -27,8 +27,8 @@
 <main class="detail-main">
 
   <div class="page-header">
-    <h1>Your Profile</h1>
-    <p class="page-subtitle">This profile drives job scoring and resume/cover note generation. Upload your resume to auto-populate it, or edit fields directly.</p>
+    <h1>Set Up Your Profile</h1>
+    <p class="page-subtitle">Start here — upload your resume and we'll fill everything in automatically. Your profile tells the AI what jobs to surface and how to tailor your application documents.</p>
   </div>
 
   <!-- Resume Upload Card -->
@@ -166,6 +166,7 @@
 
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save Profile</button>
+      <a href="/" class="btn btn-ghost" id="viewJobsBtn" style="display:none">View Jobs →</a>
       <span id="saveStatus" class="save-status"></span>
     </div>
   </form>

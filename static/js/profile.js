@@ -31,14 +31,26 @@ function handleFile(file) {
       uploadZone.style.pointerEvents = '';
 
       if (data.ok) {
-        uploadStatus.textContent = 'Profile updated from your resume. Review the fields below.';
+        uploadStatus.textContent = 'Profile updated from your resume. Review the fields below, then click View Jobs.';
         uploadStatus.classList.add('status-ok');
-        // Profile was already saved server-side — reload the form with fresh data
-        fillForm(data.extracted);
-        if (data.extracted.base_resume) {
-          document.getElementById('baseResumeText').value = data.extracted.base_resume;
-        }
+        // Profile was already saved server-side — fill form from structured profile
+        const p = data.profile || data.extracted;
+        fillForm({
+          name:                 p.name,
+          experience_years:     p.experience_years,
+          role_type:            p.role_type,
+          target_titles:        p.target_titles,
+          skills:               p.skills,
+          location_preferred:   (p.location || {}).preferred || p.location_preferred,
+          location_hard_no:     (p.location || {}).hard_no   || p.location_hard_no,
+          salary_minimum:       (p.salary   || {}).minimum   || p.salary_minimum,
+          salary_target:        (p.salary   || {}).target    || p.salary_target,
+          industries_preferred: (p.industries || {}).preferred || p.industries_preferred,
+          industries_avoid:     (p.industries || {}).avoid     || p.industries_avoid,
+        });
+        if (p.base_resume) document.getElementById('baseResumeText').value = p.base_resume;
         showSaveStatus('Saved from resume');
+        showViewJobsBtn();
       } else {
         uploadStatus.textContent = 'Failed: ' + (data.error || 'unknown error');
         uploadStatus.classList.add('status-error');
@@ -125,6 +137,7 @@ document.getElementById('profileForm').addEventListener('submit', async e => {
     if (data.ok) {
       showSaveStatus('Saved');
       showToast('Profile saved');
+      showViewJobsBtn();
     } else {
       showSaveStatus('Error: ' + (data.error || 'unknown'), true);
     }
@@ -151,4 +164,9 @@ function showToast(msg, isError) {
   t.className = 'toast' + (isError ? ' toast-error' : '');
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+function showViewJobsBtn() {
+  const btn = document.getElementById('viewJobsBtn');
+  if (btn) btn.style.display = '';
 }
