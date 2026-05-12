@@ -30,13 +30,12 @@ async def complete_async(prompt: str, max_tokens: int = 600) -> str:
     p = _provider()
 
     if p == "gemini":
-        import google.generativeai as genai
-        genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-        model = genai.GenerativeModel(
-            os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
-            generation_config={"max_output_tokens": max_tokens},
+        from google import genai
+        client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+        response = await client.aio.models.generate_content(
+            model=os.getenv("GEMINI_MODEL", "gemini-3-flash-preview"),
+            contents=prompt,
         )
-        response = await model.generate_content_async(prompt)
         return response.text.strip()
 
     if p == "anthropic":
@@ -82,13 +81,13 @@ def complete_sync(prompt: str, max_tokens: int = 800) -> str:
     p = _provider()
 
     if p == "gemini":
-        import google.generativeai as genai
-        genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-        model = genai.GenerativeModel(
-            os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
-            generation_config={"max_output_tokens": max_tokens},
+        from google import genai
+        client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+        response = client.models.generate_content(
+            model=os.getenv("GEMINI_MODEL", "gemini-3-flash-preview"),
+            contents=prompt,
         )
-        return model.generate_content(prompt).text.strip()
+        return response.text.strip()
 
     if p == "anthropic":
         import anthropic

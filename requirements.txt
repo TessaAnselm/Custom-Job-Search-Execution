@@ -9,7 +9,7 @@ PyPDF2>=3.0.0
 
 # Google Gemini — FREE tier (recommended)
 # AI_PROVIDER=gemini
-google-generativeai>=0.7.0
+google-genai>=0.8.0
 
 # Anthropic Claude
 # AI_PROVIDER=anthropic
