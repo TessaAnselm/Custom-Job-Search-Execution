@@ -1,47 +1,40 @@
 name: "Your Name"
 
 target_titles:
+  - "Senior Software Engineer"
+  - "Staff Engineer"
   - "Security Engineer"
-  - "Security Analyst"
-  - "Penetration Tester"
-  - "AppSec Engineer"
-  - "DevSecOps Engineer"
+  - "DevOps Engineer"
 
 skills:
   - Python
-  - Network Security
-  - Penetration Testing
-  - Kubernetes
+  - JavaScript
   - Docker
+  - Kubernetes
   - Linux
-  - OWASP
-  - Burp Suite
-  - Wireshark
-  - SIEM
+  - SQL
 
 location:
   preferred:
     - "Remote"
     - "San Francisco"
-    - "San Jose"
+    - "New York"
   hard_no:
     - "Requires Relocation"
 
 salary:
-  minimum: 100000
-  target: 140000
+  minimum: 120000
+  target: 160000
 
 role_type: IC   # IC | Manager | Either
 
-experience_years: 2
+experience_years: 3
 
 industries:
   preferred:
-    - "Cybersecurity"
-    - "Fintech"
     - "Dev Tools"
-    - "AI/ML Infrastructure"
-    - "Cloud"
+    - "Fintech"
+    - "Cloud Infrastructure"
   avoid:
     - "Gambling"
     - "AdTech"
@@ -53,25 +46,25 @@ scoring_weights:
   location_match: 0.15
   industry_match: 0.10
 
-minimum_score: 60
+minimum_score: 65
 
-# Paste your base resume text here — used for tailoring and cover notes
+# Paste the text of your base resume here.
+# This is used by the AI to tailor a version for each job and to draft cover notes.
 base_resume: |
-  [Your name]
-  [Email] | [Phone] | [LinkedIn] | [GitHub]
+  Your Name
+  email@example.com | linkedin.com/in/yourhandle | github.com/yourhandle
 
   SUMMARY
-  Security-focused engineer with hands-on experience in network monitoring,
-  vulnerability assessment, and web application security.
+  [2-3 sentence summary of your background and what you're looking for]
 
   SKILLS
-  Python, Bash, Linux, Kubernetes, Docker, Burp Suite, Wireshark,
-  Nmap, Metasploit, OWASP Top 10, SIEM tools
+  [List your key technical skills]
+
+  EXPERIENCE
+  [Your most recent role — company, title, dates, 2-3 bullet points]
 
   PROJECTS
-  - Home Sentinel: Python-based home network security monitor with Flask dashboard,
-    device discovery, threat intel integration, and risk scoring.
-  - DailyCyber: Ongoing CTF writeups covering cryptography, exploitation, and OSINT.
+  [Any notable projects with a short description]
 
   EDUCATION
-  City College of San Francisco — CNIT (Cybersecurity & Networking)
+  [School, degree or program, graduation year]
