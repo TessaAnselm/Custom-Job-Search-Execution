@@ -17,7 +17,6 @@ class JobScorer:
             "location_match": 0.15,
             "industry_match": 0.10,
         })
-        self.openai = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     async def score(self, job: dict) -> dict:
         breakdown = {

@@ -22,8 +22,9 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-PROFILE_PATH = os.path.join(os.path.dirname(__file__), "config", "profile.yaml")
-RESUMES_DIR  = os.path.join(os.path.dirname(__file__), "resumes")
+PROFILE_PATH    = os.path.join(os.path.dirname(__file__), "config", "profile.yaml")
+RESUMES_DIR     = os.path.join(os.path.dirname(__file__), "resumes")
+JOBS_LOCAL_PATH = os.path.join(os.path.dirname(__file__), "jobs_local.json")
 
 _preview_cache: dict = {"jobs": [], "fetched_at": 0.0}
 PREVIEW_TTL = 1800  # 30 minutes
@@ -184,7 +185,8 @@ def get_jobs(status_filter=None, min_score=0):
         from sheets.client import SheetsClient
         return SheetsClient().list_jobs(status_filter=status_filter, min_score=min_score)
     except Exception:
-        jobs = get_live_preview_jobs()
+        # Prefer locally scored results; fall back to unscored live preview
+        jobs = load_local_jobs() or get_live_preview_jobs()
         if status_filter:
             jobs = [j for j in jobs if j.get("Status") == status_filter]
         if min_score:
@@ -362,6 +364,66 @@ def gpt_extract_profile(resume_text: str) -> dict:
     # Strip any accidental markdown fences
     raw = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
     return json.loads(raw)
+
+
+# ── Local job storage (standalone mode, no Google Sheets needed) ─────────────
+
+def load_local_jobs() -> list[dict]:
+    if os.path.exists(JOBS_LOCAL_PATH):
+        import json
+        with open(JOBS_LOCAL_PATH) as f:
+            return json.load(f)
+    return []
+
+
+def save_local_jobs(jobs: list[dict]):
+    import json
+    with open(JOBS_LOCAL_PATH, "w") as f:
+        json.dump(jobs, f, indent=2, default=str)
+
+
+async def _run_standalone_search() -> list[dict]:
+    """Scrape + score locally — no Temporal or Google Sheets required."""
+    from scoring.scorer import JobScorer
+    import json as _json
+
+    profile = load_profile()
+    if not profile.get("name"):
+        raise ValueError("Set up your profile first before running a search.")
+
+    # Re-use the preview fetcher (has SSL, HN + Built In SF)
+    _preview_cache["jobs"] = []          # force fresh fetch
+    _preview_cache["fetched_at"] = 0.0
+    raw_jobs = await _fetch_live_preview()
+
+    scorer = JobScorer(profile)
+    today = date.today().isoformat()
+    results = []
+
+    for job in raw_jobs:
+        job_dict = {
+            "title":       job["Job Title"],
+            "company":     job["Company"],
+            "location":    job["Location"],
+            "salary":      job["Salary"],
+            "description": "",
+        }
+        try:
+            scored = await scorer.score(job_dict)
+        except Exception:
+            scored = {"score": 0, "explanation": ""}
+
+        results.append({
+            **job,
+            "Match Score":    str(scored["score"]),
+            "Why It Fits":    scored.get("explanation", ""),
+            "Status":         "Review",
+            "_is_preview":    False,
+        })
+
+    results.sort(key=lambda j: int(j.get("Match Score") or 0), reverse=True)
+    save_local_jobs(results)
+    return results
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
@@ -619,6 +681,7 @@ def api_generate_resume(row_id):
 
 @app.route("/api/trigger-search", methods=["POST"])
 def api_trigger_search():
+    # ── Try Temporal first (production mode) ──────────────────────────────────
     try:
         from temporalio.client import Client
         from temporal.workflows.job_search_workflow import JobSearchWorkflow, JobSearchParams
@@ -638,9 +701,24 @@ def api_trigger_search():
             return handle.id
 
         workflow_id = asyncio.run(_start())
-        return jsonify({"ok": True, "workflow_id": workflow_id, "run_id": run_id})
+        return jsonify({"ok": True, "mode": "temporal", "workflow_id": workflow_id, "run_id": run_id})
+
+    except (ImportError, ModuleNotFoundError):
+        pass  # Temporal not installed — use standalone mode
+    except Exception:
+        pass  # Temporal installed but server not running — use standalone mode
+
+    # ── Standalone mode (local, no Temporal needed) ───────────────────────────
+    try:
+        results = asyncio.run(_run_standalone_search())
+        return jsonify({
+            "ok": True,
+            "mode": "standalone",
+            "count": len(results),
+            "run_id": "local",
+        })
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e), "hint": "Make sure Temporal worker is running."}), 500
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":

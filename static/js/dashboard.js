@@ -59,9 +59,16 @@ document.getElementById('confirmSearchBtn')?.addEventListener('click', () => {
     .then(data => {
       resultEl.classList.remove('hidden');
       if (data.ok) {
-        resultEl.textContent = `Search started (run ID: ${data.run_id}). You'll be alerted when strong matches are found.`;
-        resultEl.style.borderColor = 'var(--green)';
-        resultEl.style.color = 'var(--green)';
+        if (data.mode === 'standalone') {
+          resultEl.textContent = `Done — scored ${data.count} jobs against your profile. Reloading…`;
+          resultEl.style.borderColor = 'var(--green)';
+          resultEl.style.color = 'var(--green)';
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          resultEl.textContent = `Search started (run ID: ${data.run_id}). You'll be alerted when strong matches are found.`;
+          resultEl.style.borderColor = 'var(--green)';
+          resultEl.style.color = 'var(--green)';
+        }
       } else {
         resultEl.textContent = data.error + (data.hint ? ' — ' + data.hint : '');
         resultEl.style.borderColor = 'var(--red)';
