@@ -20,10 +20,10 @@
       <a href="/report">Report</a>
     </nav>
     <div class="header-actions">
-      {% if using_demo %}
-        <span class="badge badge-demo">Demo data</span>
-      {% else %}
+      {% if using_live %}
         <span class="badge badge-live">Live</span>
+      {% elif using_preview %}
+        <span class="badge badge-preview">Preview</span>
       {% endif %}
       <button class="btn btn-primary" id="triggerSearchBtn">Run Search</button>
     </div>
@@ -32,7 +32,17 @@
 
 <main>
 
-  <!-- Stats bar -->
+  {% if using_preview %}
+  <!-- Preview banner -->
+  <div class="preview-banner">
+    <span class="preview-icon">&#127759;</span>
+    <span>Live jobs from <strong>HN Who's Hiring</strong> and <strong>Built In SF</strong> — unscored. Run a full search to score and filter them against your profile.</span>
+    <button class="btn btn-sm btn-primary" id="triggerSearchBtn2" style="margin-left:auto">Run scored search</button>
+  </div>
+  {% endif %}
+
+  <!-- Stats bar (hidden in preview mode — no meaningful status breakdown yet) -->
+  {% if not using_preview %}
   <section class="stats-bar">
     {% set status_order = ["Review", "Ready to Apply", "Applied", "Follow Up", "Interview", "Rejected", "Skip"] %}
     {% for s in status_order %}
@@ -47,9 +57,11 @@
     <a class="stat-chip clear" href="/">Clear filter</a>
     {% endif %}
   </section>
+  {% endif %}
 
   <!-- Filter bar -->
   <section class="filter-bar">
+    {% if not using_preview %}
     <form method="GET" action="/">
       {% if status_filter %}
         <input type="hidden" name="status" value="{{ status_filter }}" />
@@ -58,6 +70,7 @@
       <input type="number" id="min_score" name="min_score" value="{{ min_score }}" min="0" max="100" style="width:60px" />
       <button type="submit" class="btn btn-sm">Filter</button>
     </form>
+    {% endif %}
     <span class="job-count">{{ jobs|length }} job{{ 's' if jobs|length != 1 }}</span>
   </section>
 
@@ -83,9 +96,13 @@
             data-row-id="{{ job['_row_id'] }}"
             data-url="{{ job['Job URL'] }}">
           <td>
+            {% if job['Match Score'] %}
             <span class="score-badge score-{{ 'high' if job['Match Score']|int >= 75 else ('mid' if job['Match Score']|int >= 55 else 'low') }}">
               {{ job['Match Score'] }}
             </span>
+            {% else %}
+            <span class="score-badge score-none">—</span>
+            {% endif %}
           </td>
           <td class="company-cell">
             <strong>{{ job['Company'] }}</strong>

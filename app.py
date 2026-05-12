@@ -25,61 +25,103 @@ app.secret_key = os.urandom(24)
 PROFILE_PATH = os.path.join(os.path.dirname(__file__), "config", "profile.yaml")
 RESUMES_DIR  = os.path.join(os.path.dirname(__file__), "resumes")
 
-DEMO_JOBS = [
-    {
-        "_row_id": "2", "Date Found": "2026-05-10", "Company": "Cloudflare",
-        "Job Title": "Security Engineer, Zero Trust", "Location": "Remote",
-        "Salary": "$140,000–$175,000", "Job URL": "https://cloudflare.com/careers",
-        "Source": "greenhouse", "Match Score": "88", "Role Type": "IC",
-        "Why It Fits": "Strong match on network security and Python skills. Remote role meets location preference. Salary above target.",
-        "Resume Version": "resume_Cloudflare_Security_Engineer_abc123.txt",
-        "Cover Note Draft": "Your work on protecting ~20% of the web is exactly the scale I want to operate at...",
-        "Status": "Review", "Deadline": "", "Contact Name": "", "Referral?": "Unknown",
-        "Follow Up Date": "", "Notes": "",
-    },
-    {
-        "_row_id": "3", "Date Found": "2026-05-10", "Company": "Snyk",
-        "Job Title": "AppSec Engineer", "Location": "Remote",
-        "Salary": "$130,000–$160,000", "Job URL": "https://snyk.io/careers",
-        "Source": "lever", "Match Score": "82", "Role Type": "IC",
-        "Why It Fits": "Direct title match on AppSec. Snyk is in the preferred DevTools/Security industry. OWASP skills align perfectly.",
-        "Resume Version": "resume_Snyk_AppSec_Engineer_def456.txt",
-        "Cover Note Draft": "I've been using Snyk for vulnerability scanning in my own projects...",
-        "Status": "Review", "Deadline": "", "Contact Name": "", "Referral?": "Unknown",
-        "Follow Up Date": "", "Notes": "",
-    },
-    {
-        "_row_id": "4", "Date Found": "2026-05-09", "Company": "Anthropic",
-        "Job Title": "Trust & Safety Engineer", "Location": "San Francisco, CA",
-        "Salary": "$160,000–$200,000", "Job URL": "https://anthropic.com/careers",
-        "Source": "lever", "Match Score": "76", "Role Type": "IC",
-        "Why It Fits": "AI/ML security focus is a strong industry match. Salary exceeds target. Title is adjacent to target roles.",
-        "Resume Version": "resume_Anthropic_Trust_Safety_ghi789.txt",
-        "Cover Note Draft": "Building safe AI systems is one of the most important security challenges of this decade...",
-        "Status": "Ready to Apply", "Deadline": "", "Contact Name": "", "Referral?": "Unknown",
-        "Follow Up Date": "", "Notes": "",
-    },
-    {
-        "_row_id": "5", "Date Found": "2026-05-09", "Company": "Datadog",
-        "Job Title": "Software Engineer, Security Platform", "Location": "Remote",
-        "Salary": "$120,000–$150,000", "Job URL": "https://datadog.com/careers",
-        "Source": "greenhouse", "Match Score": "71", "Role Type": "IC",
-        "Why It Fits": "Security platform role with Python focus. Remote. Salary meets minimum but below target.",
-        "Resume Version": "", "Cover Note Draft": "",
-        "Status": "Applied", "Deadline": "", "Contact Name": "Jane Smith",
-        "Referral?": "No", "Follow Up Date": "2026-05-16", "Notes": "Applied via website",
-    },
-    {
-        "_row_id": "6", "Date Found": "2026-05-08", "Company": "Generic Corp",
-        "Job Title": "Junior IT Support", "Location": "Requires Relocation",
-        "Salary": "$45,000", "Job URL": "https://example.com/job",
-        "Source": "hn_hiring", "Match Score": "22", "Role Type": "",
-        "Why It Fits": "Low score: title mismatch, salary below minimum, requires relocation.",
-        "Resume Version": "", "Cover Note Draft": "",
-        "Status": "Skip", "Deadline": "", "Contact Name": "", "Referral?": "Unknown",
-        "Follow Up Date": "", "Notes": "",
-    },
-]
+_preview_cache: dict = {"jobs": [], "fetched_at": 0.0}
+PREVIEW_TTL = 1800  # 30 minutes
+
+
+async def _fetch_live_preview() -> list[dict]:
+    """Pull a live sample from HN Who's Hiring and Built In SF (no auth needed)."""
+    import re
+    import aiohttp
+    today = date.today().isoformat()
+    jobs: list[dict] = []
+
+    def _blank_row(extra: dict) -> dict:
+        return {
+            "Match Score": "", "Why It Fits": "", "Role Type": "",
+            "Deadline": "", "Contact Name": "", "Referral?": "",
+            "Follow Up Date": "", "Notes": "",
+            "Resume Version": "", "Cover Note Draft": "",
+            "Date Found": today,
+            "_is_preview": True,
+            **extra,
+        }
+
+    # ── HN Who's Hiring (first 18 comments concurrently) ─────────────────────
+    try:
+        algolia = "https://hn.algolia.com/api/v1/search_by_date"
+        item_url = "https://hacker-news.firebaseio.com/v0/item/{}.json"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                algolia,
+                params={"query": "Ask HN: Who is hiring?", "tags": "story,ask_hn", "hitsPerPage": 1},
+                timeout=aiohttp.ClientTimeout(total=8),
+            ) as resp:
+                hits = (await resp.json()).get("hits", [])
+            if hits:
+                thread_id = hits[0]["objectID"]
+                async with session.get(item_url.format(thread_id), timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                    thread = await resp.json()
+                kid_ids = thread.get("kids", [])[:18]
+
+                async def _fetch_comment(kid_id: int) -> dict | None:
+                    try:
+                        async with session.get(item_url.format(kid_id), timeout=aiohttp.ClientTimeout(total=5)) as r:
+                            c = await r.json()
+                        text = c.get("text", "") or ""
+                        if not text or c.get("dead") or c.get("deleted"):
+                            return None
+                        first = re.sub(r"<[^>]+>", "", text.split("<p>")[0]).strip()
+                        parts = [p.strip() for p in first.split("|")]
+                        company = parts[0] if parts else "Unknown"
+                        title   = parts[1] if len(parts) > 1 else "Software Engineer"
+                        location = parts[2] if len(parts) > 2 else "Remote"
+                        salary = next((p for p in parts if "$" in p or "k" in p.lower()), "")
+                        return _blank_row({
+                            "_row_id": f"hn-{c['id']}",
+                            "Company": company, "Job Title": title,
+                            "Location": location, "Salary": salary,
+                            "Job URL": f"https://news.ycombinator.com/item?id={c['id']}",
+                            "Source": "hn_hiring", "Status": "New",
+                        })
+                    except Exception:
+                        return None
+
+                results = await asyncio.gather(*[_fetch_comment(k) for k in kid_ids])
+                jobs += [r for r in results if r]
+    except Exception:
+        pass
+
+    # ── Built In SF ────────────────────────────────────────────────────────────
+    try:
+        from scrapers.builtin_sf import BuiltInSFScraper
+        sf_jobs = await BuiltInSFScraper(keywords=["software engineer"]).fetch()
+        for job in sf_jobs[:12]:
+            jobs.append(_blank_row({
+                "_row_id": f"bisf-{job.id}",
+                "Company": job.company, "Job Title": job.title,
+                "Location": job.location, "Salary": job.salary,
+                "Job URL": job.url,
+                "Source": "builtin_sf", "Status": "New",
+            }))
+    except Exception:
+        pass
+
+    return jobs
+
+
+def get_live_preview_jobs() -> list[dict]:
+    import time
+    now = time.time()
+    if _preview_cache["jobs"] and now - _preview_cache["fetched_at"] < PREVIEW_TTL:
+        return _preview_cache["jobs"]
+    try:
+        jobs = asyncio.run(_fetch_live_preview())
+        _preview_cache["jobs"] = jobs
+        _preview_cache["fetched_at"] = now
+        return jobs
+    except Exception:
+        return _preview_cache["jobs"]
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -93,11 +135,11 @@ def get_jobs(status_filter=None, min_score=0):
         from sheets.client import SheetsClient
         return SheetsClient().list_jobs(status_filter=status_filter, min_score=min_score)
     except Exception:
-        jobs = list(DEMO_JOBS)
+        jobs = get_live_preview_jobs()
         if status_filter:
             jobs = [j for j in jobs if j.get("Status") == status_filter]
         if min_score:
-            jobs = [j for j in jobs if int(j.get("Match Score", 0) or 0) >= min_score]
+            jobs = [j for j in jobs if int(j.get("Match Score") or 0) >= min_score]
         return jobs
 
 
@@ -106,8 +148,8 @@ def get_stats():
         from sheets.client import SheetsClient
         return SheetsClient().get_stats()
     except Exception:
-        stats = {}
-        for job in DEMO_JOBS:
+        stats: dict[str, int] = {}
+        for job in get_live_preview_jobs():
             s = job.get("Status", "Unknown")
             stats[s] = stats.get(s, 0) + 1
         return stats
@@ -224,13 +266,15 @@ def index():
     min_score = int(request.args.get("min_score", 0))
     jobs = get_jobs(status_filter=status_filter, min_score=min_score)
     stats = get_stats()
+    live = using_live_data()
     return render_template(
         "dashboard.html",
         jobs=jobs,
         stats=stats,
         status_filter=status_filter or "",
         min_score=min_score,
-        using_demo=not using_live_data(),
+        using_live=live,
+        using_preview=not live,
     )
 
 
@@ -283,6 +327,7 @@ def report():
         "avg_score": avg_score,
         "pending_followup": len(pending_followup),
     }
+    live = using_live_data()
     return render_template(
         "report.html",
         jobs=jobs,
@@ -290,6 +335,7 @@ def report():
         source_breakdown=source_breakdown,
         generated_at=datetime.now().strftime("%B %d, %Y at %I:%M %p"),
         today=date.today().isoformat(),
+        using_preview=not live,
     )
 
 

@@ -32,10 +32,13 @@ function showToast(msg, isError) {
 // Run Search modal
 const modal = document.getElementById('searchModal');
 
-document.getElementById('triggerSearchBtn')?.addEventListener('click', () => {
+function openSearchModal() {
   modal.classList.remove('hidden');
   document.getElementById('searchResult').classList.add('hidden');
-});
+}
+
+document.getElementById('triggerSearchBtn')?.addEventListener('click', openSearchModal);
+document.getElementById('triggerSearchBtn2')?.addEventListener('click', openSearchModal);
 
 function closeModal() {
   modal.classList.add('hidden');
