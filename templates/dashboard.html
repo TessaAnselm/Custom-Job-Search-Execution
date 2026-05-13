@@ -24,23 +24,35 @@
         <span class="badge badge-live">Live</span>
       {% elif using_local %}
         <span class="badge badge-live">Scored</span>
-      {% else %}
-        <span class="badge badge-preview">Preview</span>
+      {% elif not waiting_resume %}
+        <span class="badge badge-preview">Ready</span>
       {% endif %}
+      {% if not waiting_resume %}
       <button class="btn btn-primary" id="triggerSearchBtn">Run Search</button>
+      {% endif %}
     </div>
   </div>
 </header>
 
 <main>
 
-  {% if using_preview %}
-  <div class="preview-banner">
-    <span class="preview-icon">&#127759;</span>
-    <span>Live jobs from <strong>HN Who's Hiring</strong> and <strong>Built In SF</strong> — sorted by your timezone (<strong>{{ region.label }}</strong>). Run a scored search to see only jobs that match your profile.</span>
-    <button class="btn btn-sm btn-primary" id="triggerSearchBtn2" style="margin-left:auto">Run scored search</button>
+  {% if waiting_resume %}
+  <!-- No resume uploaded yet -->
+  <div class="empty-state" style="padding:6rem 2rem;">
+    <div style="font-size:3rem;margin-bottom:1rem;">&#128196;</div>
+    <h2 style="margin-bottom:.5rem;">Add your resume first</h2>
+    <p style="color:var(--text-dim);max-width:440px;margin:0 auto 1.5rem;line-height:1.6;">
+      Upload your resume on the Profile page. The AI will extract your skills, experience level,
+      and location preferences, then score every job against <em>your</em> actual profile —
+      no company-name bias, no irrelevant locations.
+    </p>
+    <a href="/profile" class="btn btn-primary">Set Up Profile &#8594;</a>
   </div>
-  {% elif using_local %}
+
+  {% else %}
+
+  <!-- Scored results banner -->
+  {% if using_local %}
   <div class="preview-banner" style="background:#0a1f0a;border-color:#1a4a1a;">
     <span class="preview-icon">&#9989;</span>
     <span>Showing <strong>{{ jobs|length }} matched job{{ 's' if jobs|length != 1 }}</strong> scored against your profile. Results expire in 12 hours — run search again for fresh jobs.</span>
@@ -48,8 +60,8 @@
   </div>
   {% endif %}
 
-  <!-- Stats bar (hidden in preview mode only) -->
-  {% if not using_preview %}
+  <!-- Stats bar -->
+  {% if using_local or using_live %}
   <section class="stats-bar">
     {% set status_order = ["Review", "Ready to Apply", "Applied", "Follow Up", "Interview", "Rejected", "Skip"] %}
     {% for s in status_order %}
@@ -66,22 +78,13 @@
   </section>
   {% endif %}
 
-  <!-- Filter bar (shown when we have scored results) -->
-  {% if not using_preview %}
+  <!-- Result count bar -->
+  {% if using_local or using_live %}
   <section class="filter-bar">
-    <form method="GET" action="/">
-      {% if status_filter %}
-        <input type="hidden" name="status" value="{{ status_filter }}" />
-      {% endif %}
-      <label for="min_score">Min score:</label>
-      <input type="number" id="min_score" name="min_score" value="{{ min_score }}" min="0" max="100" style="width:60px" />
-      <button type="submit" class="btn btn-sm">Filter</button>
-    </form>
-    <span class="job-count">{{ jobs|length }} job{{ 's' if jobs|length != 1 }}</span>
-  </section>
-  {% else %}
-  <section class="filter-bar">
-    <span class="job-count">{{ jobs|length }} job{{ 's' if jobs|length != 1 }}</span>
+    <span class="job-count">
+      Top {{ jobs|length }} match{{ 'es' if jobs|length != 1 }} from your resume
+      {% if status_filter %} &mdash; filtered by <strong>{{ status_filter }}</strong>{% endif %}
+    </span>
   </section>
   {% endif %}
 
@@ -151,12 +154,26 @@
       </tbody>
     </table>
   </section>
-  {% else %}
+
+  {% elif using_local or using_live %}
   <div class="empty-state">
     <p>No jobs match this filter.</p>
     <a href="/">Clear filters</a>
   </div>
+
+  {% else %}
+  <!-- Has resume, but search not yet run -->
+  <div class="empty-state" style="padding:5rem 2rem;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">&#128269;</div>
+    <h2 style="margin-bottom:.5rem;">Ready to search</h2>
+    <p style="color:var(--text-dim);max-width:420px;margin:0 auto 1.5rem;line-height:1.6;">
+      Your profile is set up. Click <strong>Run Search</strong> to scrape job boards, filter by your location, and score results against your skills — takes 1–2 minutes.
+    </p>
+    <button class="btn btn-primary" id="triggerSearchBtn3">Run Search</button>
+  </div>
   {% endif %}
+
+  {% endif %}{# end waiting_resume #}
 
 </main>
 
@@ -167,7 +184,7 @@
 <div id="searchModal" class="modal hidden">
   <div class="modal-box">
     <h2>Run Scored Search</h2>
-    <p>Scrapes <strong>Greenhouse, Lever, Indeed, YC, HN Who's Hiring, and Built In SF</strong>, scores every job against your profile using AI, and shows only jobs that match.<br><br>
+    <p>Scrapes <strong>Indeed, YC, HN Who's Hiring, Built In SF, and Wellfound</strong>, filters by your timezone and experience level, scores every match against your profile using AI, and shows only jobs you can actually apply for.<br><br>
     Takes 1–2 minutes. Make sure your profile is saved with your target titles and skills first.</p>
     <div id="searchResult" class="search-result hidden"></div>
     <div class="modal-actions">

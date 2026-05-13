@@ -6,6 +6,7 @@ job search pages without authentication.
 """
 
 import re
+from urllib.parse import quote
 from .base import BaseScraper, Job
 
 try:
@@ -14,12 +15,11 @@ try:
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
 
-SEARCH_URL = "https://wellfound.com/jobs?q={query}&l=San%20Francisco%2C%20CA"
-
 
 class WellfoundScraper(BaseScraper):
-    def __init__(self, queries: list[str]):
+    def __init__(self, queries: list[str], location: str = "San Francisco, CA"):
         self.queries = queries
+        self.location = location
 
     async def fetch(self) -> list[Job]:
         if not PLAYWRIGHT_AVAILABLE:
@@ -35,7 +35,7 @@ class WellfoundScraper(BaseScraper):
         return jobs
 
     async def _scrape_query(self, page, query: str) -> list[Job]:
-        url = SEARCH_URL.format(query=query.replace(" ", "%20"))
+        url = f"https://wellfound.com/jobs?q={quote(query)}&l={quote(self.location)}"
         try:
             await page.goto(url, timeout=25000)
             await page.wait_for_selector("[data-test='JobListing']", timeout=12000)

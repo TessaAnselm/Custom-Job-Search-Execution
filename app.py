@@ -10,6 +10,7 @@ Open http://localhost:5050
 
 import os
 import io
+import re
 import csv
 import asyncio
 import yaml
@@ -26,152 +27,6 @@ PROFILE_PATH    = os.path.join(os.path.dirname(__file__), "config", "profile.yam
 RESUMES_DIR     = os.path.join(os.path.dirname(__file__), "resumes")
 JOBS_LOCAL_PATH = os.path.join(os.path.dirname(__file__), "jobs_local.json")
 
-_preview_cache: dict = {"jobs": [], "fetched_at": 0.0}
-PREVIEW_TTL = 1800  # 30 minutes
-
-
-async def _fetch_live_preview() -> list[dict]:
-    """Pull a live sample from HN Who's Hiring and Built In SF (no auth needed)."""
-    import re
-    import html as htmllib
-    import ssl
-    import aiohttp
-    import certifi
-    today = date.today().isoformat()
-    jobs: list[dict] = []
-
-    ssl_ctx = ssl.create_default_context(cafile=certifi.where())
-    connector = aiohttp.TCPConnector(ssl=ssl_ctx)
-
-    def _blank_row(extra: dict) -> dict:
-        return {
-            "Match Score": "", "Why It Fits": "", "Role Type": "",
-            "Deadline": "", "Contact Name": "", "Referral?": "",
-            "Follow Up Date": "", "Notes": "",
-            "Resume Version": "", "Cover Note Draft": "",
-            "Date Found": today,
-            "_is_preview": True,
-            **extra,
-        }
-
-    # ── HN Who's Hiring (find thread via whoishiring user, fetch 20 concurrently) ──
-    try:
-        item_url = "https://hacker-news.firebaseio.com/v0/item/{}.json"
-        user_url = "https://hacker-news.firebaseio.com/v0/user/whoishiring/submitted.json"
-        async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(user_url, timeout=aiohttp.ClientTimeout(total=8)) as r:
-                submitted_ids = await r.json()
-
-            # Find the latest "Who is hiring?" thread (not "Who wants to be hired?")
-            thread_id = None
-            for sid in submitted_ids[:6]:
-                async with session.get(item_url.format(sid), timeout=aiohttp.ClientTimeout(total=5)) as r:
-                    story = await r.json()
-                if "Who is hiring" in (story.get("title") or ""):
-                    thread_id = sid
-                    kid_ids = story.get("kids", [])[:20]
-                    break
-
-            if thread_id:
-                _BAD_COMPANY = re.compile(
-                    r'[$#`{}\\]|error:|warning:|cargo |failed to|>>>|^\s*http'
-                )
-                # Matches explicit location keywords OR "City, State/Country" patterns
-                _LOCATION_WORDS = re.compile(
-                    r'\b(remote|usa|us\b|uk\b|eu\b|nyc|sf\b|berlin|london|paris|amsterdam|'
-                    r'austin|seattle|boston|chicago|toronto|sydney|singapore|helsinki|'
-                    r'full.time|part.time|hybrid|onsite|on.site|in.person|anywhere)\b'
-                    r'|^[A-Za-z][A-Za-z\s\-]+,\s*[A-Za-z]{2,}',  # "City, Country/State"
-                    re.IGNORECASE,
-                )
-
-                async def _fetch_comment(kid_id: int) -> dict | None:
-                    try:
-                        async with session.get(item_url.format(kid_id), timeout=aiohttp.ClientTimeout(total=5)) as r:
-                            c = await r.json()
-                        text = c.get("text", "") or ""
-                        if not text or c.get("dead") or c.get("deleted"):
-                            return None
-                        first = htmllib.unescape(re.sub(r"<[^>]+>", "", text.split("<p>")[0])).strip()
-                        parts = [p.strip() for p in first.split("|")]
-
-                        # Need at least company + one more field
-                        if len(parts) < 2:
-                            return None
-                        company = parts[0]
-                        # Skip if company field looks like code or is too long
-                        if len(company) > 80 or _BAD_COMPANY.search(company):
-                            return None
-
-                        # Detect and skip parts that are URLs (some companies put URL in role field)
-                        clean_parts = [p for p in parts if not p.startswith("http")]
-
-                        company  = clean_parts[0] if clean_parts else parts[0]
-                        _EMP_TYPE = re.compile(r'^(full.time|part.time|contract|freelance|intern)$', re.IGNORECASE)
-                        _IS_ROLE  = re.compile(
-                            r'\b(engineer|developer|manager|designer|analyst|scientist|'
-                            r'architect|lead|senior|junior|staff|principal|founding|'
-                            r'director|vp|head of|roles|positions)\b',
-                            re.IGNORECASE,
-                        )
-                        # Title: prefer parts that contain role words; fallback to first non-location part
-                        title = (
-                            next((p for p in clean_parts[1:] if _IS_ROLE.search(p)), None)
-                            or next((p for p in clean_parts[1:] if not _LOCATION_WORDS.search(p) and not _EMP_TYPE.match(p)), None)
-                            or "Software Engineer"
-                        )
-                        # Location: first part that looks like a place and isn't a role
-                        location = next(
-                            (p for p in clean_parts[1:] if _LOCATION_WORDS.search(p) and not _IS_ROLE.search(p)),
-                            "Remote",
-                        )
-                        salary   = next((p for p in parts if re.search(r'\$[\d,]+|\d+k', p, re.IGNORECASE)), "")
-
-                        return _blank_row({
-                            "_row_id": f"hn-{c['id']}",
-                            "Company": company, "Job Title": title,
-                            "Location": location, "Salary": salary,
-                            "Job URL": f"https://news.ycombinator.com/item?id={c['id']}",
-                            "Source": "hn_hiring", "Status": "New",
-                        })
-                    except Exception:
-                        return None
-
-                results = await asyncio.gather(*[_fetch_comment(k) for k in kid_ids])
-                jobs += [r for r in results if r]
-    except Exception:
-        pass
-
-    # ── Built In SF ────────────────────────────────────────────────────────────
-    try:
-        from scrapers.builtin_sf import BuiltInSFScraper
-        sf_jobs = await BuiltInSFScraper(keywords=["software engineer"]).fetch()
-        for job in sf_jobs[:12]:
-            jobs.append(_blank_row({
-                "_row_id": f"bisf-{job.id}",
-                "Company": job.company, "Job Title": job.title,
-                "Location": job.location, "Salary": job.salary,
-                "Job URL": job.url,
-                "Source": "builtin_sf", "Status": "New",
-            }))
-    except Exception:
-        pass
-
-    return jobs
-
-
-def get_live_preview_jobs() -> list[dict]:
-    import time
-    now = time.time()
-    if _preview_cache["jobs"] and now - _preview_cache["fetched_at"] < PREVIEW_TTL:
-        return _preview_cache["jobs"]
-    try:
-        jobs = asyncio.run(_fetch_live_preview())
-        _preview_cache["jobs"] = jobs
-        _preview_cache["fetched_at"] = now
-        return jobs
-    except Exception:
-        return _preview_cache["jobs"]
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -180,17 +35,14 @@ def using_live_data():
     return bool(os.getenv("GOOGLE_SHEETS_ID") and os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
 
 
-def get_jobs(status_filter=None, min_score=0):
+def get_jobs(status_filter=None):
     try:
         from sheets.client import SheetsClient
-        return SheetsClient().list_jobs(status_filter=status_filter, min_score=min_score)
+        return SheetsClient().list_jobs(status_filter=status_filter)
     except Exception:
-        # Prefer locally scored results; fall back to unscored live preview
-        jobs = load_local_jobs() or get_live_preview_jobs()
+        jobs = load_local_jobs()
         if status_filter:
             jobs = [j for j in jobs if j.get("Status") == status_filter]
-        if min_score:
-            jobs = [j for j in jobs if int(j.get("Match Score") or 0) >= min_score]
         return jobs
 
 
@@ -200,7 +52,7 @@ def get_stats():
         return SheetsClient().get_stats()
     except Exception:
         stats: dict[str, int] = {}
-        for job in get_live_preview_jobs():
+        for job in load_local_jobs():
             s = job.get("Status", "Unknown")
             stats[s] = stats.get(s, 0) + 1
         return stats
@@ -256,13 +108,12 @@ def get_local_region() -> dict:
 
 def _location_score(location: str, region: dict) -> int:
     """1 if job location matches local region, 0 otherwise."""
-    import re
     loc = location.lower()
     abbr = region["abbr"]
     # Detect explicit region restrictions
-    is_eu_only   = bool(re.search(r'\beu only\b|\(eu\b|europe only|remote.*eu only', loc))
+    is_eu_only   = bool(re.search(r'\beu only\b|\(eu\b|europe only|remote.*eu only|\bemea\b', loc))
     is_us_only   = bool(re.search(r'\bus only\b|north america only', loc))
-    is_asia_only = bool(re.search(r'\basia only\b|apac only', loc))
+    is_asia_only = bool(re.search(r'\basia only\b|\bapac\b|asia pacific only', loc))
     is_us_region = abbr in ("PT", "CT/MT", "ET")
     is_eu_region = abbr in ("GMT", "CET")
     if is_eu_only and is_us_region:
@@ -281,6 +132,97 @@ def _location_score(location: str, region: dict) -> int:
             if kw in loc:
                 return 1
     return 0
+
+
+# Broad list of non-US countries, regions, and geographic qualifiers.
+# Intentionally includes Canada because most Canadian roles cannot be filled by US workers.
+_NON_US_GEO = re.compile(
+    r'\b('
+    # Europe
+    r'uk|united kingdom|england|scotland|wales|ireland|'
+    r'france|germany|spain|portugal|italy|netherlands|belgium|'
+    r'switzerland|austria|sweden|norway|denmark|finland|'
+    r'poland|czech republic|czechia|hungary|romania|ukraine|russia|'
+    r'europe|eu\b|emea|northern europe|western europe|eastern europe|southern europe|'
+    r'berlin|amsterdam|paris|london|dublin|madrid|barcelona|warsaw|'
+    r'prague|stockholm|helsinki|oslo|copenhagen|vienna|zurich|zürich|'
+    r'brussels|lisbon|athens|budapest|bucharest|'
+    # Asia-Pacific
+    r'india|japan|china|korea|taiwan|hong kong|singapore|'
+    r'indonesia|malaysia|philippines|vietnam|thailand|myanmar|'
+    r'pakistan|bangladesh|sri lanka|nepal|'
+    r'australia|new zealand|sydney|melbourne|'
+    r'apac|asia|southeast asia|south asia|east asia|asia pacific|'
+    r'tokyo|beijing|shanghai|seoul|taipei|jakarta|manila|bangkok|hanoi|'
+    r'mumbai|bangalore|delhi|hyderabad|chennai|pune|'
+    # Canada (remote Canada ≠ remote US for employment purposes)
+    r'canada|british columbia|ontario|alberta|quebec|toronto|vancouver|'
+    # Middle East / Africa / LatAm
+    r'israel|tel aviv|dubai|uae|saudi arabia|'
+    r'south africa|cape town|nigeria|kenya|'
+    r'brazil|mexico|argentina|colombia|latin america|south america'
+    r')\b',
+    re.IGNORECASE,
+)
+
+# Explicit US-only work authorization signals
+_US_GEO = re.compile(
+    r'\b(united states|u\.s\.a?\.?|san francisco|california|new york|nyc|'
+    r'seattle|bay area|silicon valley|boston|austin|denver|chicago|'
+    r'los angeles|portland|atlanta|texas|washington state|'
+    r'north america(?!\s+only)|anywhere in (the\s+)?(us|usa|united states)|'
+    r'us\s*only|usa\s*only|remote\s*[-–—(]?\s*(us|usa|united states)\b'
+    r')\b',
+    re.IGNORECASE,
+)
+
+_EU_ONLY = re.compile(
+    r'\beu only\b|\(eu\)|\beurope only\b|\bemea\b|\buk only\b',
+    re.IGNORECASE,
+)
+_ASIA_ONLY = re.compile(r'\bapac\b|\basia only\b|\basia pacific only\b', re.IGNORECASE)
+
+_JUNIOR_TITLES = re.compile(
+    r'\bintern\b|\binternship\b|\bentry.?level\b|\bjunior\b|\bjr\b', re.IGNORECASE
+)
+_SENIOR_ONLY_TITLES = re.compile(
+    r'\bvp\b|\bvice president\b|\bc[est]o\b|\bchief\b|\bpresident\b', re.IGNORECASE
+)
+_DIRECTOR_TITLES = re.compile(r'\bdirector\b|\bhead of\b', re.IGNORECASE)
+
+
+def _is_location_applicable(location: str, region: dict) -> bool:
+    """Return False for jobs that are clearly in a different region than the user."""
+    loc = location.lower()
+    abbr = region["abbr"]
+    is_us_region = abbr in ("PT", "CT/MT", "ET")
+    is_eu_region = abbr in ("GMT", "CET")
+
+    if is_us_region:
+        if _EU_ONLY.search(loc) or _ASIA_ONLY.search(loc):
+            return False
+        # Has a non-US geographic name — only keep if a US signal is also present
+        # (e.g., "Remote (US or UK)" is fine; "Remote - Poland" is not)
+        if _NON_US_GEO.search(loc) and not _US_GEO.search(loc):
+            return False
+    elif is_eu_region:
+        if _ASIA_ONLY.search(loc):
+            return False
+        if re.search(r'\bus only\b|north america only', loc, re.IGNORECASE):
+            return False
+
+    return True
+
+
+def _is_level_applicable(title: str, experience_years: int) -> bool:
+    """Return False for job titles that are clearly too junior or too senior."""
+    if experience_years >= 3 and _JUNIOR_TITLES.search(title):
+        return False
+    if experience_years < 8 and _SENIOR_ONLY_TITLES.search(title):
+        return False
+    if experience_years < 6 and _DIRECTOR_TITLES.search(title):
+        return False
+    return True
 
 
 def update_status(row_id, status, notes=""):
@@ -307,12 +249,16 @@ def update_status(row_id, status, notes=""):
         except Exception:
             pass
     except Exception:
-        for job in DEMO_JOBS:
+        # Update local results file when Sheets is not configured
+        local = load_local_jobs()
+        for job in local:
             if job["_row_id"] == str(row_id):
                 job["Status"] = status
                 if notes:
                     job["Notes"] = notes
                 break
+        if local:
+            save_local_jobs(local)
 
 
 def resume_path_for_job(job: dict) -> str | None:
@@ -366,6 +312,83 @@ def gpt_extract_profile(resume_text: str) -> dict:
     return json.loads(raw)
 
 
+# ── Search query builder (profile-driven, no hardcoded terms) ────────────────
+
+_GENERIC_TITLE_WORDS = {
+    "engineer", "developer", "manager", "analyst", "designer", "lead",
+    "senior", "junior", "staff", "principal", "associate", "specialist",
+    "architect", "consultant", "director", "head", "vp", "chief",
+    "intern", "contractor", "freelance", "remote", "full", "part", "time",
+}
+
+
+def _build_search_config(profile: dict) -> dict:
+    """Derive all search queries and filters from the profile. No hardcoded terms."""
+    target_titles = profile.get("target_titles") or []
+    skills        = profile.get("skills") or []
+
+    # Primary queries: target titles from profile
+    queries: list[str] = []
+    seen: set[str] = set()
+    for t in target_titles:
+        key = t.lower().strip()
+        if key and key not in seen:
+            seen.add(key)
+            queries.append(t.strip())
+
+    # Pad with key skills if fewer than 4 title queries
+    if len(queries) < 4:
+        for skill in skills:
+            key = skill.lower().strip()
+            if key and key not in seen:
+                seen.add(key)
+                queries.append(skill.strip())
+            if len(queries) >= 6:
+                break
+
+    queries = queries[:8]  # cap to avoid hammering APIs
+
+    # RemoteOK tags: distinctive single words from target titles
+    tags: list[str] = []
+    tag_seen: set[str] = set()
+    for title in target_titles:
+        for word in title.lower().split():
+            w = word.strip("(),./")
+            if w and w not in _GENERIC_TITLE_WORDS and w not in tag_seen and len(w) > 2:
+                tag_seen.add(w)
+                tags.append(w)
+    if not tags:
+        tags = [q.split()[0].lower() for q in queries if q.split()][:4]
+
+    # Title keywords for RemoteOK result filtering (all meaningful words from titles)
+    title_kws: list[str] = []
+    tkw_seen: set[str] = set()
+    for title in target_titles:
+        for word in title.lower().split():
+            w = word.strip("(),./")
+            if len(w) > 2 and w not in tkw_seen:
+                tkw_seen.add(w)
+                title_kws.append(w)
+
+    # Location for scrapers comes from the server's detected timezone,
+    # not from the resume — the resume may list past cities the user no longer lives in.
+    region = get_local_region()
+    region_location = {
+        "PT":    "San Francisco Bay Area, CA",
+        "CT/MT": "Chicago, IL",
+        "ET":    "New York, NY",
+        "GMT":   "London, UK",
+        "CET":   "Berlin, Germany",
+    }.get(region["abbr"], "Remote")
+
+    return {
+        "queries":        queries,
+        "tags":           tags,
+        "title_keywords": title_kws or None,
+        "location":       region_location,
+    }
+
+
 # ── Local job storage (standalone mode, no Google Sheets needed) ─────────────
 
 LOCAL_JOBS_TTL = 12 * 3600  # expire local results after 12 hours
@@ -399,11 +422,15 @@ async def _run_standalone_search() -> list[dict]:
         raise ValueError("Set up your profile first before running a search.")
 
     min_score = profile.get("minimum_score", 65)
-    fallback_queries = profile.get("target_titles", ["software engineer"])
+
+    # Build all search terms from the profile — no hardcoded keywords anywhere
+    sc = _build_search_config(profile)
+    queries        = sc["queries"]
+    tags           = sc["tags"]
+    title_keywords = sc["title_keywords"]
+    location       = sc["location"]
 
     # Force fresh data
-    _preview_cache["jobs"] = []
-    _preview_cache["fetched_at"] = 0.0
     if os.path.exists(JOBS_LOCAL_PATH):
         os.remove(JOBS_LOCAL_PATH)
 
@@ -430,87 +457,100 @@ async def _run_standalone_search() -> list[dict]:
                 scrapers.append(HNHiringScraper())
             elif t == "indeed":
                 from scrapers.indeed import IndeedScraper
-                scrapers.append(IndeedScraper(
-                    src.get("queries") or fallback_queries,
-                    src.get("location", "Remote"),
-                ))
+                scrapers.append(IndeedScraper(queries, location))
             elif t == "yc":
                 from scrapers.yc import YCScraper
-                scrapers.append(YCScraper(
-                    src.get("queries") or fallback_queries,
-                    remote=src.get("remote", True),
-                ))
+                scrapers.append(YCScraper(queries, remote=src.get("remote", True)))
             elif t == "builtin_sf":
                 from scrapers.builtin_sf import BuiltInSFScraper
-                scrapers.append(BuiltInSFScraper(
-                    src.get("keywords") or fallback_queries,
-                    remote=src.get("remote", False),
-                ))
-            # linkedin — needs auth cookie, skip
-            # wellfound — needs Playwright, skip unless installed
+                scrapers.append(BuiltInSFScraper(queries, remote=src.get("remote", False)))
+            elif t == "remotive":
+                from scrapers.remotive import RemotiveScraper
+                scrapers.append(RemotiveScraper(queries))
+            elif t == "remoteok":
+                from scrapers.remoteok import RemoteOKScraper
+                scrapers.append(RemoteOKScraper(tags=tags, title_keywords=title_keywords))
             elif t == "wellfound":
                 try:
                     from scrapers.wellfound import WellfoundScraper
-                    scrapers.append(WellfoundScraper(src.get("queries") or fallback_queries))
+                    scrapers.append(WellfoundScraper(queries, location))
                 except Exception:
                     pass
+            # linkedin — needs LINKEDIN_LI_AT session cookie in .env
+            elif t == "linkedin":
+                li_at = os.getenv("LINKEDIN_LI_AT", "")
+                if li_at:
+                    from scrapers.linkedin import LinkedInScraper
+                    scrapers.append(LinkedInScraper(queries, location, li_at))
         except Exception:
             pass
 
     # ── Scrape all sources concurrently ───────────────────────────────────────
     raw_results = await asyncio.gather(*[s.fetch() for s in scrapers], return_exceptions=True)
 
-    seen, all_jobs = set(), []
+    # Collect all jobs; deduplicate only by exact URL (same URL = truly identical posting)
+    seen_urls: set[str] = set()
+    all_jobs = []
     for result in raw_results:
         if not isinstance(result, list):
             continue
         for job in result:
-            if job.url not in seen:
-                seen.add(job.url)
+            if job.url not in seen_urls:
+                seen_urls.add(job.url)
                 all_jobs.append(job)
 
-    # ── Score: fast pass for all, AI explanation only for matches ─────────────
+    # ── Step 1: apply hard filters + fast-score every candidate ───────────────
     scorer  = JobScorer(profile)
+    region  = get_local_region()
+    exp_yrs = profile.get("experience_years", 0)
     today   = date.today().isoformat()
-    results = []
 
+    candidates: list[tuple[int, object, dict, str]] = []
     for job in all_jobs:
-        jd = job.to_dict()
+        if not _is_location_applicable(job.location, region):
+            continue
+        if not _is_level_applicable(job.title, exp_yrs):
+            continue
+        jd   = job.to_dict()
         fast = scorer.score_fast(jd)
-        score = fast["score"]
+        candidates.append((fast["score"], job, jd, fast["explanation"]))
 
-        if score >= min_score:
-            # Full AI explanation only for jobs that actually match
-            try:
-                full = await scorer.score(jd)
-                explanation = full.get("explanation", fast["explanation"])
-                score = full["score"]
-            except Exception:
-                explanation = fast["explanation"]
-        else:
-            explanation = fast["explanation"]
+    # ── Step 2: sort by fast score, keep top 20 for AI explanation ────────────
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    top20 = candidates[:20]
+
+    # ── Step 3: AI explanation only on the top 20 — no wasted calls ───────────
+    results = []
+    for fast_score, job, jd, fast_explanation in top20:
+        try:
+            full        = await scorer.score(jd)
+            score       = full["score"]
+            explanation = full.get("explanation", fast_explanation)
+        except Exception:
+            score       = fast_score
+            explanation = fast_explanation
 
         results.append({
-            "_row_id":        job.id,
-            "Date Found":     today,
-            "Company":        job.company,
-            "Job Title":      job.title,
-            "Location":       job.location,
-            "Salary":         job.salary,
-            "Job URL":        job.url,
-            "Source":         job.source,
-            "Match Score":    str(score),
-            "Why It Fits":    explanation,
-            "Status":         "Review" if score >= min_score else "Skip",
-            "Role Type":      job.role_type,
-            "Deadline":       job.deadline,
-            "Contact Name":   job.contact_name,
-            "Referral?":      "",
-            "Follow Up Date": "",
-            "Notes":          "",
-            "Resume Version": "",
+            "_row_id":          job.id,
+            "Date Found":       today,
+            "Company":          job.company,
+            "Job Title":        job.title,
+            "Location":         job.location,
+            "Salary":           job.salary,
+            "Job URL":          job.url,
+            "Source":           job.source,
+            "Match Score":      str(score),
+            "Why It Fits":      explanation,
+            "Status":           "Review",
+            "Role Type":        job.role_type,
+            "Deadline":         job.deadline,
+            "Contact Name":     job.contact_name,
+            "Referral?":        "",
+            "Follow Up Date":   "",
+            "Notes":            "",
+            "Resume Version":   "",
             "Cover Note Draft": "",
-            "_is_preview":    False,
+            "_is_preview":      False,
         })
 
     results.sort(key=lambda j: int(j.get("Match Score") or 0), reverse=True)
@@ -522,36 +562,31 @@ async def _run_standalone_search() -> list[dict]:
 
 @app.route("/")
 def index():
-    # First-time users: redirect to profile setup before showing jobs
+    # Always land on Profile until the user has uploaded a resume
     if not os.path.exists(PROFILE_PATH) or not load_profile().get("name"):
         return redirect("/profile")
-    status_filter = request.args.get("status")
-    has_local = bool(load_local_jobs()) if not using_live_data() else False
-    # Default min_score to profile minimum when viewing scored local results
-    profile_min = load_profile().get("minimum_score", 65) if has_local else 0
-    min_score = int(request.args.get("min_score", profile_min))
-    jobs = get_jobs(status_filter=status_filter, min_score=min_score)
-    stats = get_stats()
-    live = using_live_data()
-    has_local = bool(load_local_jobs()) if not live else False
-    using_preview = not live and not has_local
-    region = get_local_region()
 
-    # Tag + sort by timezone in preview mode; local scored results keep their score order
-    if using_preview:
-        for j in jobs:
-            j["_tz_match"] = bool(_location_score(j.get("Location", ""), region))
-        jobs = sorted(jobs, key=lambda j: j["_tz_match"], reverse=True)
+    profile = load_profile()
+    has_resume = bool(profile.get("base_resume", "").strip())
+    if not has_resume:
+        return redirect("/profile")
+
+    region        = get_local_region()
+    live          = using_live_data()
+    has_local     = bool(load_local_jobs()) if not live else False
+    status_filter = request.args.get("status")
+    jobs          = get_jobs(status_filter=status_filter)
+    stats         = get_stats()
 
     return render_template(
         "dashboard.html",
         jobs=jobs,
         stats=stats,
         status_filter=status_filter or "",
-        min_score=min_score,
+        total=len(load_local_jobs()) if has_local else len(jobs),
         using_live=live,
         using_local=has_local,
-        using_preview=using_preview,
+        waiting_resume=False,
         region=region,
     )
 
@@ -577,6 +612,17 @@ def profile_page():
 
 @app.route("/report")
 def report():
+    if not os.path.exists(PROFILE_PATH) or not load_profile().get("name"):
+        return redirect("/profile")
+
+    profile = load_profile()
+    has_resume = bool(profile.get("base_resume", "").strip())
+    if not has_resume:
+        return redirect("/profile")
+
+    generated_at = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+    today = date.today().isoformat()
+
     all_jobs = get_jobs()
     tracked_statuses = {"Applied", "Follow Up", "Interview", "Rejected", "Ready to Apply", "Offer"}
     jobs = [j for j in all_jobs if j.get("Status") in tracked_statuses]
@@ -605,15 +651,14 @@ def report():
         "avg_score": avg_score,
         "pending_followup": len(pending_followup),
     }
-    live = using_live_data()
     return render_template(
         "report.html",
         jobs=jobs,
         stats=stats,
         source_breakdown=source_breakdown,
-        generated_at=datetime.now().strftime("%B %d, %Y at %I:%M %p"),
-        today=date.today().isoformat(),
-        using_preview=not live,
+        generated_at=generated_at,
+        today=today,
+        waiting_resume=False,
     )
 
 

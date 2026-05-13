@@ -34,15 +34,14 @@
     <p class="page-subtitle">Generated {{ generated_at }}</p>
   </div>
 
-  {% if using_preview %}
+  {% if waiting_resume %}
   <div class="empty-state" style="padding:4rem 2rem;">
-    <div style="font-size:2.5rem;margin-bottom:1rem;">&#128202;</div>
-    <h2 style="margin-bottom:.5rem;">Nothing to report yet</h2>
-    <p style="color:var(--text-dim);max-width:420px;margin:0 auto 1.5rem;">
-      Your report tracks jobs you've applied to, interviews, follow-ups, and response rates.
-      Browse the live jobs, then run a full search to start building your history.
+    <div style="font-size:2.5rem;margin-bottom:1rem;">&#128196;</div>
+    <h2 style="margin-bottom:.5rem;">Add your resume first</h2>
+    <p style="color:var(--text-dim);max-width:440px;margin:0 auto 1.5rem;line-height:1.6;">
+      Upload your resume on the Profile page. Once your profile is set up, run a search — your report will track applications, interviews, follow-up dates, and response rates here.
     </p>
-    <a href="/" class="btn btn-primary">View Jobs</a>
+    <a href="/profile" class="btn btn-primary">Set Up Profile &#8594;</a>
   </div>
   {% else %}
 
@@ -157,7 +156,7 @@
     </table>
   </div>
 
-  {% endif %}{# end using_preview #}
+  {% endif %}{# end waiting_resume #}
 
 </main>
 

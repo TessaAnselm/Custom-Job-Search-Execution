@@ -1,6 +1,7 @@
 """HN Who's Hiring scraper — parses the monthly Ask HN thread."""
 
 import re
+import asyncio
 import aiohttp
 from .base import BaseScraper, Job
 
@@ -43,15 +44,28 @@ class HNHiringScraper(BaseScraper):
             except Exception:
                 return []
 
-            kids = thread.get("kids", [])[:200]  # cap at 200 top-level comments
-            jobs = []
+            kids = thread.get("kids", [])[:200]
 
-            for kid_id in kids:
-                job = await self._parse_comment(session, kid_id)
-                if job:
-                    jobs.append(job)
+            # Fetch comments concurrently in batches of 25 to avoid hammering the API
+            jobs = []
+            batch_size = 25
+            for i in range(0, len(kids), batch_size):
+                batch = kids[i:i + batch_size]
+                results = await asyncio.gather(
+                    *[self._parse_comment(session, kid_id) for kid_id in batch],
+                    return_exceptions=True,
+                )
+                for r in results:
+                    if isinstance(r, Job):
+                        jobs.append(r)
 
         return jobs
+
+    _BAD_COMPANY = re.compile(
+        r'[$#`{}\\\n]|error:|warning:|cargo |failed to|>>>|^\s*http|'
+        r'^\s*I\b|^\s*We\b|^\s*The\b|^\s*This\b|^\s*If\b|^\s*You\b',
+        re.IGNORECASE,
+    )
 
     async def _parse_comment(self, session: aiohttp.ClientSession, comment_id: int) -> Job | None:
         try:
@@ -67,15 +81,24 @@ class HNHiringScraper(BaseScraper):
         if not text or comment.get("dead") or comment.get("deleted"):
             return None
 
-        # First line is usually "Company | Role | Location | Remote/Onsite | Salary"
+        # Top-level job posts use "Company | Role | Location | ..."
         lines = text.split("<p>")
-        first_line = re.sub(r"<[^>]+>", "", lines[0]).strip()
+        import html as htmllib
+        first_line = htmllib.unescape(re.sub(r"<[^>]+>", "", lines[0])).strip()
         parts = [p.strip() for p in first_line.split("|")]
 
-        company = parts[0] if parts else "Unknown"
-        title = parts[1] if len(parts) > 1 else "Software Engineer"
-        location = parts[2] if len(parts) > 2 else ""
-        salary = next((p for p in parts if "$" in p or "k" in p.lower()), "")
+        # Require at least Company + Role fields — reject plain comment text
+        if len(parts) < 2:
+            return None
+
+        company = parts[0]
+        # Reject if company looks like a sentence (too long or starts with a pronoun/verb)
+        if len(company) > 80 or self._BAD_COMPANY.search(company):
+            return None
+
+        title = parts[1]
+        location = parts[2] if len(parts) > 2 else "Remote"
+        salary = next((p for p in parts if "$" in p or re.search(r'\d+k\b', p, re.IGNORECASE)), "")
 
         description = re.sub(r"<[^>]+>", " ", text).strip()[:2000]
         url = f"https://news.ycombinator.com/item?id={comment_id}"

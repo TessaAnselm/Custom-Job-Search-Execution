@@ -39,6 +39,7 @@ function openSearchModal() {
 
 document.getElementById('triggerSearchBtn')?.addEventListener('click', openSearchModal);
 document.getElementById('triggerSearchBtn2')?.addEventListener('click', openSearchModal);
+document.getElementById('triggerSearchBtn3')?.addEventListener('click', openSearchModal);
 
 function closeModal() {
   modal.classList.add('hidden');

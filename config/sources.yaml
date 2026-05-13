@@ -1,65 +1,48 @@
 sources:
+  # All search queries, keywords, and tags are derived from your profile at
+  # runtime — nothing is hardcoded here. Only toggle sources on/off and set
+  # scraper-specific options (remote: true, company slugs, etc.).
+
+  # Greenhouse / Lever require specific company slugs to query their boards.
+  # Add slugs only when you want to target a specific employer.
   - type: greenhouse
-    enabled: true
-    companies:
-      - stripe
-      - airbnb
-      - notion
-      - figma
-      - cloudflare
-      - hashicorp
-      - datadog
+    enabled: false
+    companies: []
 
   - type: lever
-    enabled: true
-    companies:
-      - anthropic
-      - openai
-      - mistral
-      - scale
-      - snyk
-      - lacework
+    enabled: false
+    companies: []
 
+  # HN Who's Hiring — monthly Ask HN thread, no config needed.
   - type: hn_hiring
     enabled: true
 
+  # Remotive — free remote job board, no auth needed.
+  - type: remotive
+    enabled: true
+
+  # RemoteOK — free remote job board, no auth needed.
+  - type: remoteok
+    enabled: true
+
+  # LinkedIn — requires LINKEDIN_LI_AT session cookie in .env
   - type: linkedin
-    enabled: false   # requires LINKEDIN_LI_AT session cookie
-    keywords:
-      - "security engineer remote"
-      - "appsec engineer remote"
-      - "penetration tester remote"
-      - "devsecops remote"
-    location: "Remote"
+    enabled: false
 
+  # Indeed RSS is dead (404). Disabled.
   - type: indeed
-    enabled: true
-    location: "San Francisco, CA"
-    queries:
-      - "security engineer"
-      - "appsec engineer"
-      - "penetration tester"
-      - "devsecops engineer"
+    enabled: false
 
-  - type: wellfound
-    enabled: true    # requires playwright — run: playwright install chromium
-    queries:
-      - "security engineer"
-      - "appsec"
-      - "devsecops"
-
+  # YC Work at a Startup — JSON API removed (406). Disabled.
   - type: yc
-    enabled: true
+    enabled: false
     remote: true
-    queries:
-      - "security engineer"
-      - "security analyst"
-      - "appsec"
 
-  - type: builtin_sf
+  # Wellfound — requires: playwright install chromium
+  - type: wellfound
     enabled: true
-    remote: false    # set true to include remote roles
-    keywords:
-      - "security engineer"
-      - "appsec engineer"
-      - "penetration tester"
+
+  # Built In SF API is gone (405). Disabled.
+  - type: builtin_sf
+    enabled: false
+    remote: true

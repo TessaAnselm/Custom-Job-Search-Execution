@@ -13,7 +13,7 @@ uploadZone.addEventListener('drop', e => {
 });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
 
-function handleFile(file) {
+async function handleFile(file) {
   if (file.size > 5 * 1024 * 1024) { showToast('File too large (max 5MB)', true); return; }
 
   uploadStatus.className = 'upload-status';
@@ -24,44 +24,42 @@ function handleFile(file) {
   const fd = new FormData();
   fd.append('resume', file);
 
-  fetch('/api/upload-resume', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(data => {
-      uploadZone.style.opacity = '';
-      uploadZone.style.pointerEvents = '';
+  try {
+    const res  = await fetch('/api/upload-resume', { method: 'POST', body: fd });
+    const data = await res.json();
 
-      if (data.ok) {
-        uploadStatus.textContent = 'Profile updated from your resume. Review the fields below, then click View Jobs.';
-        uploadStatus.classList.add('status-ok');
-        // Profile was already saved server-side — fill form from structured profile
-        const p = data.profile || data.extracted;
-        fillForm({
-          name:                 p.name,
-          experience_years:     p.experience_years,
-          role_type:            p.role_type,
-          target_titles:        p.target_titles,
-          skills:               p.skills,
-          location_preferred:   (p.location || {}).preferred || p.location_preferred,
-          location_hard_no:     (p.location || {}).hard_no   || p.location_hard_no,
-          salary_minimum:       (p.salary   || {}).minimum   || p.salary_minimum,
-          salary_target:        (p.salary   || {}).target    || p.salary_target,
-          industries_preferred: (p.industries || {}).preferred || p.industries_preferred,
-          industries_avoid:     (p.industries || {}).avoid     || p.industries_avoid,
-        });
-        if (p.base_resume) document.getElementById('baseResumeText').value = p.base_resume;
-        showSaveStatus('Saved from resume');
-        showViewJobsBtn();
-      } else {
-        uploadStatus.textContent = 'Failed: ' + (data.error || 'unknown error');
-        uploadStatus.classList.add('status-error');
-      }
-    })
-    .catch(() => {
-      uploadZone.style.opacity = '';
-      uploadZone.style.pointerEvents = '';
-      uploadStatus.textContent = 'Network error — try again.';
+    uploadZone.style.opacity = '';
+    uploadZone.style.pointerEvents = '';
+
+    if (data.ok) {
+      const p = data.profile || data.extracted;
+      fillForm({
+        name:                 p.name,
+        experience_years:     p.experience_years,
+        role_type:            p.role_type,
+        target_titles:        p.target_titles,
+        skills:               p.skills,
+        location_preferred:   (p.location || {}).preferred || p.location_preferred,
+        location_hard_no:     (p.location || {}).hard_no   || p.location_hard_no,
+        salary_minimum:       (p.salary   || {}).minimum   || p.salary_minimum,
+        salary_target:        (p.salary   || {}).target    || p.salary_target,
+        industries_preferred: (p.industries || {}).preferred || p.industries_preferred,
+        industries_avoid:     (p.industries || {}).avoid     || p.industries_avoid,
+      });
+      if (p.base_resume) document.getElementById('baseResumeText').value = p.base_resume;
+      uploadStatus.textContent = 'Profile extracted — starting job search…';
+      uploadStatus.classList.add('status-ok');
+      await runSearchAndRedirect();
+    } else {
+      uploadStatus.textContent = 'Failed: ' + (data.error || 'unknown error');
       uploadStatus.classList.add('status-error');
-    });
+    }
+  } catch (err) {
+    uploadZone.style.opacity = '';
+    uploadZone.style.pointerEvents = '';
+    uploadStatus.textContent = 'Network error — try again.';
+    uploadStatus.classList.add('status-error');
+  }
 }
 
 function fillForm(d) {
@@ -135,9 +133,7 @@ document.getElementById('profileForm').addEventListener('submit', async e => {
     });
     const data = await res.json();
     if (data.ok) {
-      showSaveStatus('Saved');
-      showToast('Profile saved');
-      showViewJobsBtn();
+      await runSearchAndRedirect();
     } else {
       showSaveStatus('Error: ' + (data.error || 'unknown'), true);
     }
@@ -169,4 +165,37 @@ function showToast(msg, isError) {
 function showViewJobsBtn() {
   const btn = document.getElementById('viewJobsBtn');
   if (btn) btn.style.display = '';
+}
+
+async function runSearchAndRedirect() {
+  const msg = 'Searching jobs — this takes 1–2 minutes…';
+  showSaveStatus(msg);
+  // Also update the upload status area if visible
+  if (uploadStatus && !uploadStatus.classList.contains('hidden')) {
+    uploadStatus.textContent = msg;
+  }
+
+  const submitBtn = document.querySelector('#profileForm [type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const r    = await fetch('/api/trigger-search', { method: 'POST' });
+    const data = await r.json();
+    if (data.ok) {
+      showSaveStatus('Done! Loading your matches…');
+      window.location.href = '/';
+    } else {
+      const errMsg = 'Saved — search failed: ' + (data.error || 'unknown');
+      showSaveStatus(errMsg, true);
+      if (uploadStatus) uploadStatus.textContent = errMsg;
+      showViewJobsBtn();
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  } catch {
+    const errMsg = 'Saved — could not reach server for search.';
+    showSaveStatus(errMsg, true);
+    if (uploadStatus) uploadStatus.textContent = errMsg;
+    showViewJobsBtn();
+    if (submitBtn) submitBtn.disabled = false;
+  }
 }
