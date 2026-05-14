@@ -51,6 +51,18 @@ class JobSearchWorkflow:
 
     def __init__(self):
         self._approval_signals: dict[str, ApprovalDecision] = {}
+        self._status: dict = {
+            "stage":          "starting",
+            "message":        "Initializing search",
+            "jobs_found":     0,
+            "jobs_scored":    0,
+            "strong_matches": 0,
+        }
+
+    @workflow.query
+    def get_status(self) -> dict:
+        """Queryable from the dashboard to show live pipeline progress."""
+        return self._status
 
     @workflow.signal
     async def approve_job(self, signal: JobApprovalSignal):
@@ -62,6 +74,7 @@ class JobSearchWorkflow:
         workflow.logger.info(f"Starting job search run: {params.run_id}")
 
         # Step 1: Scrape all sources
+        self._status.update({"stage": "scraping", "message": "Scraping job boards…"})
         raw_jobs = await workflow.execute_activity(
             "scrape_all_sources",
             args=[params.sources_path, params.profile_path],
@@ -70,7 +83,12 @@ class JobSearchWorkflow:
         )
         workflow.logger.info(f"Scraped {len(raw_jobs)} raw jobs")
 
-        # Step 2: Deduplicate against sheet
+        # Step 2: Deduplicate
+        self._status.update({
+            "stage":      "deduplicating",
+            "message":    f"Deduplicating {len(raw_jobs)} jobs…",
+            "jobs_found": len(raw_jobs),
+        })
         new_jobs = await workflow.execute_activity(
             "deduplicate_jobs",
             args=[raw_jobs],
@@ -79,10 +97,14 @@ class JobSearchWorkflow:
         workflow.logger.info(f"{len(new_jobs)} new jobs after deduplication")
 
         if not new_jobs:
-            workflow.logger.info("No new jobs found. Run complete.")
+            self._status.update({"stage": "complete", "message": "No new jobs found."})
             return {"run_id": params.run_id, "new_jobs": 0, "processed": 0}
 
         # Step 3: Score all jobs against profile
+        self._status.update({
+            "stage":   "scoring",
+            "message": f"AI scoring {len(new_jobs)} jobs against your profile…",
+        })
         scored_jobs = await workflow.execute_activity(
             "score_jobs",
             args=[new_jobs, params.profile_path],
@@ -91,13 +113,18 @@ class JobSearchWorkflow:
 
         # Step 4: Filter below threshold
         strong_matches = [j for j in scored_jobs if j["score"] >= params.minimum_score]
-        weak_matches = [j for j in scored_jobs if j["score"] < params.minimum_score]
-
+        weak_matches   = [j for j in scored_jobs if j["score"] < params.minimum_score]
         workflow.logger.info(
             f"Scoring complete: {len(strong_matches)} strong, {len(weak_matches)} weak"
         )
 
-        # Step 5: Write weak matches to sheet as "Skip" (no AI doc generation)
+        # Step 5: Save results
+        self._status.update({
+            "stage":          "saving",
+            "message":        f"Saving {len(strong_matches)} strong matches…",
+            "jobs_scored":    len(scored_jobs),
+            "strong_matches": len(strong_matches),
+        })
         if weak_matches:
             await workflow.execute_activity(
                 "write_jobs_to_sheet",
@@ -105,7 +132,7 @@ class JobSearchWorkflow:
                 start_to_close_timeout=timedelta(minutes=3),
             )
 
-        # Step 6: Process strong matches — generate docs, write sheet, alert, wait for approval
+        # Step 6: Process strong matches — generate docs, write, alert, wait for approval
         processing_tasks = [
             workflow.execute_child_workflow(
                 JobProcessingWorkflow.run,
@@ -114,23 +141,26 @@ class JobSearchWorkflow:
             )
             for job in strong_matches
         ]
-
         results = await asyncio.gather(*processing_tasks, return_exceptions=True)
 
         successes = [r for r in results if not isinstance(r, Exception)]
-        failures = [r for r in results if isinstance(r, Exception)]
-
+        failures  = [r for r in results if isinstance(r, Exception)]
         if failures:
             workflow.logger.error(f"{len(failures)} job workflows failed: {failures}")
 
+        self._status.update({
+            "stage":   "complete",
+            "message": f"Done — {len(strong_matches)} matches ready for review",
+        })
+
         return {
-            "run_id": params.run_id,
-            "scraped": len(raw_jobs),
-            "new": len(new_jobs),
+            "run_id":         params.run_id,
+            "scraped":        len(raw_jobs),
+            "new":            len(new_jobs),
             "strong_matches": len(strong_matches),
-            "weak_matches": len(weak_matches),
-            "processed": len(successes),
-            "failed": len(failures),
+            "weak_matches":   len(weak_matches),
+            "processed":      len(successes),
+            "failed":         len(failures),
         }
 
 

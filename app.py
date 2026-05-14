@@ -752,6 +752,38 @@ def api_trigger_search():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+@app.route("/api/workflow-status/<workflow_id>")
+def api_workflow_status(workflow_id):
+    """Poll Temporal for live pipeline progress. Returns stage, message, and job counts."""
+    try:
+        from temporalio.client import Client
+
+        async def _get():
+            client = await Client.connect(
+                os.getenv("TEMPORAL_HOST", "localhost:7233"),
+                namespace=os.getenv("TEMPORAL_NAMESPACE", "default"),
+            )
+            handle = client.get_workflow_handle(workflow_id)
+            desc   = await handle.describe()
+            result = {
+                "ok":          True,
+                "workflow_id": workflow_id,
+                "status":      desc.status.name,
+                "run_id":      desc.run_id,
+            }
+            # Attach detailed progress from the workflow query handler
+            try:
+                from temporal.workflows.job_search_workflow import JobSearchWorkflow
+                result["progress"] = await handle.query(JobSearchWorkflow.get_status)
+            except Exception:
+                pass
+            return result
+
+        return jsonify(asyncio.run(_get()))
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     print("Job Search Dashboard → http://localhost:5050")
     app.run(debug=True, port=5050)
