@@ -89,6 +89,21 @@ The dashboard auto-detects Temporal. If the server is running, searches run as d
 [trigger-search] MODE: Standalone (local)
 ```
 
+**Storage in Temporal mode**
+
+| `GOOGLE_SHEETS_ID` set? | Where jobs are saved |
+|---|---|
+| Yes | Google Sheets (full read/write) |
+| No | `jobs_local.json` (automatic fallback — no setup needed) |
+
+All four Temporal storage activities (`write_job_to_sheet`, `update_job_status`, etc.) check for Sheets credentials at runtime and fall back to local JSON if they aren't present. You can run Temporal mode completely without Google Cloud.
+
+Verify your docker-compose is valid before starting:
+```bash
+docker compose config   # should print the merged config with no errors
+docker compose up
+```
+
 ---
 
 ## Environment Variables
