@@ -18,15 +18,19 @@ from datetime import datetime, date
 from flask import Flask, render_template, jsonify, request, Response, redirect
 from dotenv import load_dotenv
 from utils.search_config import get_local_region, build_search_config
+from storage.local import (
+    load_local_jobs, save_local_jobs,
+    update_local_job_status, get_local_job_status,
+    JOBS_LOCAL_PATH,
+)
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-PROFILE_PATH    = os.path.join(os.path.dirname(__file__), "config", "profile.yaml")
-RESUMES_DIR     = os.path.join(os.path.dirname(__file__), "resumes")
-JOBS_LOCAL_PATH = os.path.join(os.path.dirname(__file__), "jobs_local.json")
+PROFILE_PATH = os.path.join(os.path.dirname(__file__), "config", "profile.yaml")
+RESUMES_DIR  = os.path.join(os.path.dirname(__file__), "resumes")
 
 
 
@@ -279,28 +283,6 @@ def gpt_extract_profile(resume_text: str) -> dict:
     return json.loads(raw)
 
 
-
-# ── Local job storage (standalone mode, no Google Sheets needed) ─────────────
-
-LOCAL_JOBS_TTL = 12 * 3600  # expire local results after 12 hours
-
-
-def load_local_jobs() -> list[dict]:
-    """Load scored results; return [] if file missing or older than 12 hours."""
-    import json, time
-    if not os.path.exists(JOBS_LOCAL_PATH):
-        return []
-    if time.time() - os.path.getmtime(JOBS_LOCAL_PATH) > LOCAL_JOBS_TTL:
-        os.remove(JOBS_LOCAL_PATH)
-        return []
-    with open(JOBS_LOCAL_PATH) as f:
-        return json.load(f)
-
-
-def save_local_jobs(jobs: list[dict]):
-    import json
-    with open(JOBS_LOCAL_PATH, "w") as f:
-        json.dump(jobs, f, indent=2, default=str)
 
 
 async def _run_standalone_search() -> list[dict]:

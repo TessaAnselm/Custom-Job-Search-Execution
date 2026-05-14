@@ -101,10 +101,18 @@ async def scrape_all_sources(sources_path: str, profile_path: str) -> list[dict]
 
 @activity.defn(name="deduplicate_jobs")
 async def deduplicate_jobs(raw_jobs: list[dict]) -> list[dict]:
-    """Remove jobs already in the sheet by URL."""
-    from sheets.client import SheetsClient
-    sheets = SheetsClient()
-    existing_urls = sheets.get_existing_urls()
+    """Remove jobs already seen by URL. Uses Sheets if configured, otherwise local JSON."""
+    existing_urls: set[str] = set()
+    try:
+        import os as _os
+        if _os.getenv("GOOGLE_SHEETS_ID") and _os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"):
+            from sheets.client import SheetsClient
+            existing_urls = SheetsClient().get_existing_urls()
+        else:
+            from storage.local import load_local_jobs
+            existing_urls = {j.get("Job URL", "") for j in load_local_jobs()}
+    except Exception as e:
+        activity.logger.warning(f"Could not load existing URLs for dedup ({e}) — skipping")
 
     seen_urls: set[str] = set()
     new_jobs = []
