@@ -64,7 +64,7 @@ class JobSearchWorkflow:
         # Step 1: Scrape all sources
         raw_jobs = await workflow.execute_activity(
             "scrape_all_sources",
-            args=[params.sources_path],
+            args=[params.sources_path, params.profile_path],
             start_to_close_timeout=timedelta(minutes=10),
             retry_policy=RetryPolicy(maximum_attempts=3),
         )

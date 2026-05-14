@@ -17,6 +17,7 @@ import yaml
 from datetime import datetime, date
 from flask import Flask, render_template, jsonify, request, Response, redirect
 from dotenv import load_dotenv
+from utils.search_config import get_local_region, build_search_config
 
 load_dotenv()
 
@@ -70,40 +71,6 @@ def save_profile(data: dict):
     with open(PROFILE_PATH, "w") as f:
         yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
-
-def get_local_region() -> dict:
-    """Detect the server's local timezone and return matching location keywords."""
-    import datetime
-    offset_h = datetime.datetime.now().astimezone().utcoffset().total_seconds() / 3600
-    if offset_h <= -7:
-        return {"label": "West Coast US", "abbr": "PT",
-                "keywords": ["remote (us)", "remote", "san francisco", "sf", "california",
-                             "pacific", "seattle", "los angeles", "west coast", "us"]}
-    if offset_h <= -5:
-        return {"label": "Central / Mountain US", "abbr": "CT/MT",
-                "keywords": ["remote (us)", "remote", "chicago", "denver", "mountain",
-                             "central", "us"]}
-    if offset_h <= -3:
-        return {"label": "East Coast US", "abbr": "ET",
-                "keywords": ["remote (us)", "remote", "new york", "nyc", "boston",
-                             "east coast", "us"]}
-    if offset_h <= 1:
-        return {"label": "UK / West Europe", "abbr": "GMT",
-                "keywords": ["remote (eu)", "remote", "uk", "london", "ireland",
-                             "amsterdam", "paris", "europe", "eu"]}
-    if offset_h <= 4:
-        return {"label": "Central / East Europe", "abbr": "CET",
-                "keywords": ["remote (eu)", "remote", "berlin", "amsterdam", "paris",
-                             "europe", "eu", "warsaw", "prague"]}
-    if offset_h <= 7:
-        return {"label": "Middle East / South Asia", "abbr": "IST",
-                "keywords": ["remote", "india", "dubai", "israel"]}
-    if offset_h <= 10:
-        return {"label": "East Asia", "abbr": "SGT",
-                "keywords": ["remote", "singapore", "hong kong", "china", "japan",
-                             "korea", "asia"]}
-    return {"label": "Asia Pacific", "abbr": "AEST",
-            "keywords": ["remote", "australia", "sydney", "melbourne", "auckland"]}
 
 
 def _location_score(location: str, region: dict) -> int:
@@ -312,82 +279,6 @@ def gpt_extract_profile(resume_text: str) -> dict:
     return json.loads(raw)
 
 
-# ── Search query builder (profile-driven, no hardcoded terms) ────────────────
-
-_GENERIC_TITLE_WORDS = {
-    "engineer", "developer", "manager", "analyst", "designer", "lead",
-    "senior", "junior", "staff", "principal", "associate", "specialist",
-    "architect", "consultant", "director", "head", "vp", "chief",
-    "intern", "contractor", "freelance", "remote", "full", "part", "time",
-}
-
-
-def _build_search_config(profile: dict) -> dict:
-    """Derive all search queries and filters from the profile. No hardcoded terms."""
-    target_titles = profile.get("target_titles") or []
-    skills        = profile.get("skills") or []
-
-    # Primary queries: target titles from profile
-    queries: list[str] = []
-    seen: set[str] = set()
-    for t in target_titles:
-        key = t.lower().strip()
-        if key and key not in seen:
-            seen.add(key)
-            queries.append(t.strip())
-
-    # Pad with key skills if fewer than 4 title queries
-    if len(queries) < 4:
-        for skill in skills:
-            key = skill.lower().strip()
-            if key and key not in seen:
-                seen.add(key)
-                queries.append(skill.strip())
-            if len(queries) >= 6:
-                break
-
-    queries = queries[:8]  # cap to avoid hammering APIs
-
-    # RemoteOK tags: distinctive single words from target titles
-    tags: list[str] = []
-    tag_seen: set[str] = set()
-    for title in target_titles:
-        for word in title.lower().split():
-            w = word.strip("(),./")
-            if w and w not in _GENERIC_TITLE_WORDS and w not in tag_seen and len(w) > 2:
-                tag_seen.add(w)
-                tags.append(w)
-    if not tags:
-        tags = [q.split()[0].lower() for q in queries if q.split()][:4]
-
-    # Title keywords for RemoteOK result filtering (all meaningful words from titles)
-    title_kws: list[str] = []
-    tkw_seen: set[str] = set()
-    for title in target_titles:
-        for word in title.lower().split():
-            w = word.strip("(),./")
-            if len(w) > 2 and w not in tkw_seen:
-                tkw_seen.add(w)
-                title_kws.append(w)
-
-    # Location for scrapers comes from the server's detected timezone,
-    # not from the resume — the resume may list past cities the user no longer lives in.
-    region = get_local_region()
-    region_location = {
-        "PT":    "San Francisco Bay Area, CA",
-        "CT/MT": "Chicago, IL",
-        "ET":    "New York, NY",
-        "GMT":   "London, UK",
-        "CET":   "Berlin, Germany",
-    }.get(region["abbr"], "Remote")
-
-    return {
-        "queries":        queries,
-        "tags":           tags,
-        "title_keywords": title_kws or None,
-        "location":       region_location,
-    }
-
 
 # ── Local job storage (standalone mode, no Google Sheets needed) ─────────────
 
@@ -424,11 +315,14 @@ async def _run_standalone_search() -> list[dict]:
     min_score = profile.get("minimum_score", 65)
 
     # Build all search terms from the profile — no hardcoded keywords anywhere
-    sc = _build_search_config(profile)
+    sc = build_search_config(profile)
     queries        = sc["queries"]
     tags           = sc["tags"]
     title_keywords = sc["title_keywords"]
     location       = sc["location"]
+
+    print(f"\n[search] queries={queries}")
+    print(f"[search] tags={tags} | location={location}")
 
     # Force fresh data
     if os.path.exists(JOBS_LOCAL_PATH):
@@ -474,30 +368,38 @@ async def _run_standalone_search() -> list[dict]:
                 try:
                     from scrapers.wellfound import WellfoundScraper
                     scrapers.append(WellfoundScraper(queries, location))
-                except Exception:
-                    pass
+                except Exception as e_wf:
+                    print(f"[scraper] wellfound init failed: {e_wf}")
             # linkedin — needs LINKEDIN_LI_AT session cookie in .env
             elif t == "linkedin":
                 li_at = os.getenv("LINKEDIN_LI_AT", "")
                 if li_at:
                     from scrapers.linkedin import LinkedInScraper
                     scrapers.append(LinkedInScraper(queries, location, li_at))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[scraper] {t} failed to initialize: {type(e).__name__}: {e}")
+
+    print(f"[search] running {len(scrapers)} scraper(s): {[s.source_name() for s in scrapers]}")
 
     # ── Scrape all sources concurrently ───────────────────────────────────────
     raw_results = await asyncio.gather(*[s.fetch() for s in scrapers], return_exceptions=True)
 
-    # Collect all jobs; deduplicate only by exact URL (same URL = truly identical posting)
+    # Collect jobs with per-source breakdown
     seen_urls: set[str] = set()
     all_jobs = []
-    for result in raw_results:
-        if not isinstance(result, list):
-            continue
-        for job in result:
-            if job.url not in seen_urls:
-                seen_urls.add(job.url)
-                all_jobs.append(job)
+    print("\n── Scraper results ──────────────────────────")
+    for scraper_obj, result in zip(scrapers, raw_results):
+        name = scraper_obj.source_name()
+        if isinstance(result, Exception):
+            print(f"  {name:15}: FAILED — {type(result).__name__}: {result}")
+        else:
+            print(f"  {name:15}: {len(result)} jobs")
+            for job in result:
+                if job.url not in seen_urls:
+                    seen_urls.add(job.url)
+                    all_jobs.append(job)
+    print(f"  {'total':15}: {len(all_jobs)} (after URL dedup)")
+    print("─────────────────────────────────────────────\n")
 
     # ── Step 1: apply hard filters + fast-score every candidate ───────────────
     scorer  = JobScorer(profile)
@@ -844,16 +746,19 @@ def api_trigger_search():
             return handle.id
 
         workflow_id = asyncio.run(_start())
+        print(f"[trigger-search] MODE: Temporal | workflow_id={workflow_id}")
         return jsonify({"ok": True, "mode": "temporal", "workflow_id": workflow_id, "run_id": run_id})
 
     except (ImportError, ModuleNotFoundError):
-        pass  # Temporal not installed — use standalone mode
-    except Exception:
-        pass  # Temporal installed but server not running — use standalone mode
+        print("[trigger-search] Temporal not installed — using standalone mode")
+    except Exception as e:
+        print(f"[trigger-search] Temporal unavailable ({type(e).__name__}: {e}) — using standalone mode")
 
     # ── Standalone mode (local, no Temporal needed) ───────────────────────────
+    print("[trigger-search] MODE: Standalone (local)")
     try:
         results = asyncio.run(_run_standalone_search())
+        print(f"[trigger-search] Done — {len(results)} jobs saved")
         return jsonify({
             "ok": True,
             "mode": "standalone",
@@ -861,6 +766,7 @@ def api_trigger_search():
             "run_id": "local",
         })
     except Exception as e:
+        print(f"[trigger-search] Standalone search failed: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 

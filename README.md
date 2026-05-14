@@ -21,7 +21,9 @@ Zero hardcoded job titles or keywords. Every search query is derived from your r
 
 ---
 
-## Quick Start
+## Quick Start — Standalone (no Temporal required)
+
+The default mode. One terminal, no Docker needed.
 
 ```bash
 # 1. Clone
@@ -41,6 +43,51 @@ python3 app.py
 ```
 
 Upload your resume on the Profile page. The app extracts your profile, runs a search, and redirects you to your top 20 matches — usually within 1–2 minutes.
+
+The terminal will print a source breakdown after each search so you can see exactly what each scraper returned:
+
+```
+── Scraper results ──────────────────────────
+  hn_hiring      : 18 jobs
+  remotive       : 34 jobs
+  remoteok       : 22 jobs
+  wellfound      : 11 jobs
+  total          : 82 (after URL dedup)
+─────────────────────────────────────────────
+```
+
+---
+
+## Optional: Run with Temporal (durable workflows + follow-up reminders)
+
+Temporal adds durability, retries, and the follow-up reminder workflow. You need three terminals:
+
+**Terminal 1 — Temporal server**
+```bash
+docker compose up
+# Temporal server: localhost:7233
+# Temporal UI:     localhost:8080
+```
+
+**Terminal 2 — Worker**
+```bash
+python3 -m temporal.workers.worker
+```
+
+**Terminal 3 — Dashboard**
+```bash
+python3 app.py
+# Open http://localhost:5050
+```
+
+The dashboard auto-detects Temporal. If the server is running, searches run as durable workflows and appear in the Temporal UI at `localhost:8080`. If Docker is stopped, it falls back to standalone mode automatically — the terminal will print which mode is active:
+
+```
+[trigger-search] MODE: Temporal | workflow_id=job-search-a1b2c3d4
+# or
+[trigger-search] Temporal unavailable (ConnectionError: ...) — using standalone mode
+[trigger-search] MODE: Standalone (local)
+```
 
 ---
 
