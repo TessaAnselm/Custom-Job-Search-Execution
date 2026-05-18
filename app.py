@@ -12,6 +12,8 @@ import os
 import io
 import re
 import csv
+import glob
+import atexit
 import asyncio
 import yaml
 from datetime import datetime, date
@@ -29,26 +31,85 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+RESUMES_DIR = os.path.join(os.path.dirname(__file__), "resumes")
+
+
+def _cleanup_on_exit():
+    """Clear jobs, tailored resumes, and profile when the app shuts down."""
+    try:
+        with open(JOBS_LOCAL_PATH, "w") as f:
+            f.write("[]")
+    except Exception:
+        pass
+    try:
+        for f in glob.glob(os.path.join(RESUMES_DIR, "resume_*.txt")):
+            os.remove(f)
+    except Exception:
+        pass
+    try:
+        if os.path.exists(PROFILE_PATH):
+            os.remove(PROFILE_PATH)
+    except Exception:
+        pass
+
+
+atexit.register(_cleanup_on_exit)
+
 PROFILE_PATH = os.path.join(os.path.dirname(__file__), "config", "profile.yaml")
-RESUMES_DIR  = os.path.join(os.path.dirname(__file__), "resumes")
 
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+_SOURCE_LABELS = {
+    "linkedin":   "LinkedIn",
+    "indeed":     "Indeed",
+    "wellfound":  "Wellfound",
+    "hn_hiring":  "HN Who's Hiring",
+    "remotive":   "Remotive",
+    "remoteok":   "RemoteOK",
+    "greenhouse": "Greenhouse",
+    "lever":      "Lever",
+    "yc":         "YC Work at a Startup",
+    "builtin_sf": "Built In SF",
+}
+
+def get_enabled_sources() -> list[str]:
+    sources_path = os.path.join(os.path.dirname(__file__), "config", "sources.yaml")
+    try:
+        with open(sources_path) as f:
+            sources = yaml.safe_load(f).get("sources", [])
+        return [_SOURCE_LABELS.get(s["type"], s["type"]) for s in sources if s.get("enabled")]
+    except Exception:
+        return []
+
+
 def using_live_data():
-    return bool(os.getenv("GOOGLE_SHEETS_ID") and os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
+    sheets_id = os.getenv("GOOGLE_SHEETS_ID", "")
+    sa_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+    return bool(
+        sheets_id and sa_path
+        and sheets_id != "your-spreadsheet-id-here"
+        and os.path.exists(sa_path)
+    )
 
 
-def get_jobs(status_filter=None):
+def get_jobs(status_filter=None, sort_by="score", sort_dir="desc"):
     try:
         from sheets.client import SheetsClient
-        return SheetsClient().list_jobs(status_filter=status_filter)
+        jobs = SheetsClient().list_jobs(status_filter=status_filter)
     except Exception:
         jobs = load_local_jobs()
         if status_filter:
             jobs = [j for j in jobs if j.get("Status") == status_filter]
-        return jobs
+
+    def _sort_key(j):
+        if sort_by == "score":
+            return int(j.get("Match Score") or j.get("score") or 0)
+        return str(j.get(sort_by, "")).lower()
+
+    reverse = sort_dir == "desc"
+    return sorted(jobs, key=_sort_key, reverse=reverse)
 
 
 def get_stats():
@@ -301,10 +362,10 @@ async def _run_standalone_search() -> list[dict]:
     queries        = sc["queries"]
     tags           = sc["tags"]
     title_keywords = sc["title_keywords"]
-    location       = sc["location"]
+    locations      = sc.get("locations", [sc["location"]])
 
     print(f"\n[search] queries={queries}")
-    print(f"[search] tags={tags} | location={location}")
+    print(f"[search] locations={locations}")
 
     # Force fresh data
     if os.path.exists(JOBS_LOCAL_PATH):
@@ -333,7 +394,8 @@ async def _run_standalone_search() -> list[dict]:
                 scrapers.append(HNHiringScraper())
             elif t == "indeed":
                 from scrapers.indeed import IndeedScraper
-                scrapers.append(IndeedScraper(queries, location))
+                for loc in locations:
+                    scrapers.append(IndeedScraper(queries, loc))
             elif t == "yc":
                 from scrapers.yc import YCScraper
                 scrapers.append(YCScraper(queries, remote=src.get("remote", True)))
@@ -347,17 +409,18 @@ async def _run_standalone_search() -> list[dict]:
                 from scrapers.remoteok import RemoteOKScraper
                 scrapers.append(RemoteOKScraper(tags=tags, title_keywords=title_keywords))
             elif t == "wellfound":
-                try:
-                    from scrapers.wellfound import WellfoundScraper
-                    scrapers.append(WellfoundScraper(queries, location))
-                except Exception as e_wf:
-                    print(f"[scraper] wellfound init failed: {e_wf}")
-            # linkedin — needs LINKEDIN_LI_AT session cookie in .env
+                for loc in locations:
+                    try:
+                        from scrapers.wellfound import WellfoundScraper
+                        scrapers.append(WellfoundScraper(queries, loc))
+                    except Exception as e_wf:
+                        print(f"[scraper] wellfound init failed ({loc}): {e_wf}")
             elif t == "linkedin":
                 li_at = os.getenv("LINKEDIN_LI_AT", "")
                 if li_at:
                     from scrapers.linkedin import LinkedInScraper
-                    scrapers.append(LinkedInScraper(queries, location, li_at))
+                    for loc in locations:
+                        scrapers.append(LinkedInScraper(queries, loc, li_at))
         except Exception as e:
             print(f"[scraper] {t} failed to initialize: {type(e).__name__}: {e}")
 
@@ -459,7 +522,9 @@ def index():
     live          = using_live_data()
     has_local     = bool(load_local_jobs()) if not live else False
     status_filter = request.args.get("status")
-    jobs          = get_jobs(status_filter=status_filter)
+    sort_by       = request.args.get("sort", "score")
+    sort_dir      = request.args.get("dir", "desc")
+    jobs          = get_jobs(status_filter=status_filter, sort_by=sort_by, sort_dir=sort_dir)
     stats         = get_stats()
 
     return render_template(
@@ -467,11 +532,14 @@ def index():
         jobs=jobs,
         stats=stats,
         status_filter=status_filter or "",
+        sort_by=sort_by,
+        sort_dir=sort_dir,
         total=len(load_local_jobs()) if has_local else len(jobs),
         using_live=live,
         using_local=has_local,
         waiting_resume=False,
         region=region,
+        enabled_sources=get_enabled_sources(),
     )
 
 

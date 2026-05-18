@@ -132,21 +132,19 @@ class JobSearchWorkflow:
                 start_to_close_timeout=timedelta(minutes=3),
             )
 
-        # Step 6: Process strong matches — generate docs, write, alert, wait for approval
-        processing_tasks = [
-            workflow.execute_child_workflow(
-                JobProcessingWorkflow.run,
-                args=[job, params],
-                id=f"job-{job['id']}-{params.run_id}",
-            )
-            for job in strong_matches
-        ]
-        results = await asyncio.gather(*processing_tasks, return_exceptions=True)
-
-        successes = [r for r in results if not isinstance(r, Exception)]
-        failures  = [r for r in results if isinstance(r, Exception)]
-        if failures:
-            workflow.logger.error(f"{len(failures)} job workflows failed: {failures}")
+        # Step 6: Fire-and-forget per-job workflows — they run independently,
+        # waiting for human approval without blocking this parent workflow.
+        spawned = 0
+        for job in strong_matches:
+            try:
+                await workflow.start_child_workflow(
+                    JobProcessingWorkflow.run,
+                    args=[job, params],
+                    id=f"job-{job['id']}-{params.run_id}",
+                )
+                spawned += 1
+            except Exception as e:
+                workflow.logger.error(f"Failed to spawn child for {job.get('id')}: {e}")
 
         self._status.update({
             "stage":   "complete",
@@ -159,8 +157,7 @@ class JobSearchWorkflow:
             "new":            len(new_jobs),
             "strong_matches": len(strong_matches),
             "weak_matches":   len(weak_matches),
-            "processed":      len(successes),
-            "failed":         len(failures),
+            "spawned":        spawned,
         }
 
 

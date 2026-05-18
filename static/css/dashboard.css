@@ -132,6 +132,10 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
   color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em;
   border-bottom: 1px solid var(--border);
 }
+.sort-header {
+  color: var(--accent); text-decoration: none; white-space: nowrap;
+}
+.sort-header:hover { color: var(--accent-hover); }
 .job-table tbody tr {
   border-bottom: 1px solid var(--border); transition: background .1s;
 }

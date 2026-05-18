@@ -13,6 +13,21 @@ _GENERIC_TITLE_WORDS = {
 }
 
 
+def get_local_city() -> str | None:
+    """Detect the user's city via IP geolocation. Returns 'City, State' or None."""
+    try:
+        import urllib.request, json
+        with urllib.request.urlopen("https://ipapi.co/json/", timeout=3) as r:
+            data = json.loads(r.read())
+            city  = data.get("city", "").strip()
+            state = data.get("region", "").strip()
+            if city:
+                return f"{city}, {state}" if state else city
+    except Exception:
+        pass
+    return None
+
+
 def get_local_region() -> dict:
     """Detect the server's local timezone and return matching location keywords."""
     import datetime
@@ -105,19 +120,25 @@ def build_search_config(profile: dict) -> dict:
                 tkw_seen.add(w)
                 title_kws.append(w)
 
-    # Location comes from the server's detected timezone, not from the resume
-    region = get_local_region()
-    region_location = {
-        "PT":    "San Francisco Bay Area, CA",
-        "CT/MT": "Chicago, IL",
-        "ET":    "New York, NY",
-        "GMT":   "London, UK",
-        "CET":   "Berlin, Germany",
-    }.get(region["abbr"], "Remote")
+    # Build an ordered list of locations: specific cities first, Remote last.
+    # Scrapers that accept a location param will run once per location.
+    preferred = (profile.get("location") or {}).get("preferred", [])
+    locations = [l for l in preferred if l.lower() != "remote"]
+    wants_remote = any(l.lower() == "remote" for l in preferred)
+
+    # If no city in profile, detect automatically from IP geolocation
+    if not locations:
+        detected = get_local_city()
+        if detected:
+            locations.append(detected)
+
+    if wants_remote or not locations:
+        locations.append("Remote")
 
     return {
         "queries":        queries,
         "tags":           tags,
         "title_keywords": title_kws or None,
-        "location":       region_location,
+        "location":       locations[0],   # primary location (backward compat)
+        "locations":      locations,      # full ordered list for multi-location search
     }

@@ -27,9 +27,9 @@ async def scrape_all_sources(sources_path: str, profile_path: str) -> list[dict]
     queries        = sc["queries"]
     tags           = sc["tags"]
     title_keywords = sc["title_keywords"]
-    location       = sc["location"]
+    locations      = sc.get("locations", [sc["location"]])
 
-    activity.logger.info(f"queries={queries} | tags={tags} | location={location}")
+    activity.logger.info(f"queries={queries} | locations={locations}")
 
     scrapers = []
     for src in sources_cfg:
@@ -53,19 +53,22 @@ async def scrape_all_sources(sources_path: str, profile_path: str) -> list[dict]
                 from scrapers.remoteok import RemoteOKScraper
                 scrapers.append(RemoteOKScraper(tags=tags, title_keywords=title_keywords))
             elif t == "wellfound":
-                try:
-                    from scrapers.wellfound import WellfoundScraper
-                    scrapers.append(WellfoundScraper(queries, location))
-                except Exception as e_wf:
-                    activity.logger.warning(f"wellfound init failed: {e_wf}")
+                for loc in locations:
+                    try:
+                        from scrapers.wellfound import WellfoundScraper
+                        scrapers.append(WellfoundScraper(queries, loc))
+                    except Exception as e_wf:
+                        activity.logger.warning(f"wellfound init failed ({loc}): {e_wf}")
             elif t == "linkedin":
                 li_at = os.getenv("LINKEDIN_LI_AT", "")
                 if li_at:
                     from scrapers.linkedin import LinkedInScraper
-                    scrapers.append(LinkedInScraper(queries, location, li_at))
+                    for loc in locations:
+                        scrapers.append(LinkedInScraper(queries, loc, li_at))
             elif t == "indeed":
                 from scrapers.indeed import IndeedScraper
-                scrapers.append(IndeedScraper(queries, location))
+                for loc in locations:
+                    scrapers.append(IndeedScraper(queries, loc))
             elif t == "yc":
                 from scrapers.yc import YCScraper
                 scrapers.append(YCScraper(queries, remote=src.get("remote", True)))

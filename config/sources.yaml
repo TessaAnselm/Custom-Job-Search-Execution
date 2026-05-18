@@ -15,23 +15,23 @@ sources:
 
   # HN Who's Hiring — monthly Ask HN thread, no config needed.
   - type: hn_hiring
-    enabled: true
+    enabled: false
 
   # Remotive — free remote job board, no auth needed.
   - type: remotive
-    enabled: true
+    enabled: false
 
   # RemoteOK — free remote job board, no auth needed.
   - type: remoteok
-    enabled: true
+    enabled: false
 
   # LinkedIn — requires LINKEDIN_LI_AT session cookie in .env
   - type: linkedin
-    enabled: false
+    enabled: true
 
   # Indeed RSS is dead (404). Disabled.
   - type: indeed
-    enabled: false
+    enabled: true
 
   # YC Work at a Startup — JSON API removed (406). Disabled.
   - type: yc
@@ -40,9 +40,9 @@ sources:
 
   # Wellfound — requires: playwright install chromium
   - type: wellfound
-    enabled: true
+    enabled: false
 
   # Built In SF API is gone (405). Disabled.
   - type: builtin_sf
     enabled: false
-    remote: true
+    remote: false

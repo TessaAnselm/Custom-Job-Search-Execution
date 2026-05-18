@@ -3,8 +3,11 @@
 import asyncio
 import os
 import logging
+from dotenv import load_dotenv
 from temporalio.client import Client
 from temporalio.worker import Worker
+
+load_dotenv()
 
 from temporal.workflows.job_search_workflow import (
     JobSearchWorkflow,

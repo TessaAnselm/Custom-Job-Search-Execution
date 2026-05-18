@@ -6,6 +6,7 @@ so Temporal mode works out of the box without any cloud setup.
 """
 
 import os
+from datetime import date
 from temporalio import activity
 from storage.local import (
     load_local_jobs, save_local_jobs,
@@ -14,7 +15,40 @@ from storage.local import (
 
 
 def _sheets_configured() -> bool:
-    return bool(os.getenv("GOOGLE_SHEETS_ID") and os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
+    sheets_id = os.getenv("GOOGLE_SHEETS_ID", "")
+    sa_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+    return bool(
+        sheets_id and sa_path
+        and sheets_id != "your-spreadsheet-id-here"
+        and os.path.exists(sa_path)
+    )
+
+
+def _to_local_row(job: dict, status: str) -> dict:
+    """Normalize a raw job dict (lowercase keys) to the dashboard's Title Case schema."""
+    row_id = job.get("id") or job.get("_row_id", "")
+    return {
+        "_row_id":          row_id,
+        "Date Found":       job.get("Date Found") or date.today().isoformat(),
+        "Company":          job.get("Company") or job.get("company", ""),
+        "Job Title":        job.get("Job Title") or job.get("title", ""),
+        "Location":         job.get("Location") or job.get("location", ""),
+        "Salary":           job.get("Salary") or job.get("salary", ""),
+        "Job URL":          job.get("Job URL") or job.get("url", ""),
+        "Source":           job.get("Source") or job.get("source", ""),
+        "Match Score":      str(job.get("Match Score") or job.get("score", 0)),
+        "Why It Fits":      job.get("Why It Fits") or job.get("explanation", ""),
+        "Status":           status,
+        "Role Type":        job.get("Role Type") or job.get("role_type", ""),
+        "Deadline":         job.get("Deadline") or job.get("deadline", ""),
+        "Contact Name":     job.get("Contact Name") or job.get("contact_name", ""),
+        "Referral?":        job.get("Referral?", ""),
+        "Follow Up Date":   job.get("Follow Up Date", ""),
+        "Notes":            job.get("Notes", ""),
+        "Resume Version":   job.get("Resume Version") or job.get("resume_filename", ""),
+        "Cover Note Draft": job.get("Cover Note Draft") or job.get("cover_note", ""),
+        "_is_preview":      False,
+    }
 
 
 @activity.defn(name="write_jobs_to_sheet")
@@ -33,11 +67,10 @@ async def write_jobs_to_sheet(jobs: list[dict], status: str) -> list[str]:
         except Exception as e:
             activity.logger.warning(f"Sheets write failed ({e}), falling back to local storage")
 
-    # Local fallback — set status on each job and append to jobs_local.json
     existing = {j["_row_id"]: j for j in load_local_jobs()}
     for job in jobs:
-        row_id = job.get("id") or job.get("_row_id", "")
-        existing[row_id] = {**job, "_row_id": row_id, "Status": status}
+        row = _to_local_row(job, status)
+        existing[row["_row_id"]] = row
     save_local_jobs(list(existing.values()))
     return [job.get("id") or job.get("_row_id", "") for job in jobs]
 
@@ -59,12 +92,12 @@ async def write_job_to_sheet(job_with_docs: dict) -> str:
         except Exception as e:
             activity.logger.warning(f"Sheets write failed ({e}), falling back to local storage")
 
-    # Local fallback
-    row_id = job_with_docs.get("id") or job_with_docs.get("_row_id", "")
+    status = job_with_docs.get("status", "Review")
+    row = _to_local_row(job_with_docs, status)
     existing = {j["_row_id"]: j for j in load_local_jobs()}
-    existing[row_id] = {**job_with_docs, "_row_id": row_id}
+    existing[row["_row_id"]] = row
     save_local_jobs(list(existing.values()))
-    return row_id
+    return row["_row_id"]
 
 
 @activity.defn(name="update_job_status")

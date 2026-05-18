@@ -57,13 +57,21 @@ class JobScorer:
 
     def _score_skills(self, job: dict) -> float:
         """Score based on skill overlap between job description and profile."""
-        description = (job.get("description", "") + " " + job.get("title", "")).lower()
+        description = job.get("description", "").strip()
+        title = job.get("title", "").lower()
         profile_skills = [s.lower() for s in self.profile.get("skills", [])]
 
         if not profile_skills:
             return 50.0
 
-        matches = sum(1 for skill in profile_skills if skill in description)
+        # No description available — only check title, but don't penalize for missing info
+        if not description:
+            title_matches = sum(1 for skill in profile_skills if skill in title)
+            # Give neutral 50 as base + bonus for any title hits
+            return min(100.0, 50.0 + title_matches * 10)
+
+        full_text = (description + " " + title).lower()
+        matches = sum(1 for skill in profile_skills if skill in full_text)
         return min(100.0, matches / len(profile_skills) * 100)
 
     def _score_salary(self, job: dict) -> float:

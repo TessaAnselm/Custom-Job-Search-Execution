@@ -94,7 +94,12 @@
     <table class="job-table">
       <thead>
         <tr>
-          <th>Score</th>
+          <th>
+            {% set next_dir = 'asc' if sort_dir == 'desc' else 'desc' %}
+            <a href="/?sort=score&dir={{ next_dir }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="sort-header">
+              Score {{ '▼' if sort_dir == 'desc' else '▲' }}
+            </a>
+          </th>
           <th>Company</th>
           <th>Title</th>
           <th>Location</th>
@@ -184,7 +189,7 @@
 <div id="searchModal" class="modal hidden">
   <div class="modal-box">
     <h2>Run Scored Search</h2>
-    <p>Scrapes <strong>HN Who's Hiring, Remotive, RemoteOK, and Wellfound</strong> concurrently, filters by your timezone and experience level, then AI-scores every match against your resume. Shows the top 20 results.<br><br>
+    <p>Scrapes <strong>{{ enabled_sources | join(', ') }}</strong> concurrently, filters by your timezone and experience level, then AI-scores every match against your resume. Shows the top 20 results.<br><br>
     Takes 1–2 minutes. Queries are derived entirely from your resume — no keywords to configure.</p>
     <div id="searchResult" class="search-result hidden"></div>
     <div class="modal-actions">

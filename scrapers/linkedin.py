@@ -22,10 +22,10 @@ LINKEDIN_JOBS_URL = (
 
 
 class LinkedInScraper(BaseScraper):
-    def __init__(self, keywords: list[str], location: str = "Remote"):
+    def __init__(self, keywords: list[str], location: str = "Remote", li_at: str = ""):
         self.keywords = keywords
         self.location = location
-        self.li_at = os.getenv("LINKEDIN_LI_AT", "")
+        self.li_at = li_at or os.getenv("LINKEDIN_LI_AT", "")
 
     async def fetch(self) -> list[Job]:
         if not PLAYWRIGHT_AVAILABLE:
@@ -57,7 +57,7 @@ class LinkedInScraper(BaseScraper):
 
     async def _scrape_page(self, page, url: str) -> list[Job]:
         try:
-            await page.goto(url, timeout=20000)
+            await page.goto(url, timeout=30000, wait_until="domcontentloaded")
             await page.wait_for_selector(".job-card-container", timeout=10000)
         except Exception:
             return []
@@ -66,16 +66,16 @@ class LinkedInScraper(BaseScraper):
         jobs = []
         for card in cards[:25]:
             try:
-                title_el = await card.query_selector(".job-card-list__title")
-                company_el = await card.query_selector(".job-card-container__primary-description")
-                location_el = await card.query_selector(".job-card-container__metadata-item")
-                link_el = await card.query_selector("a.job-card-container__link")
+                title_el    = await card.query_selector("a.job-card-container__link strong")
+                company_el  = await card.query_selector(".artdeco-entity-lockup__subtitle")
+                location_el = await card.query_selector(".job-card-container__metadata-wrapper li")
+                link_el     = await card.query_selector("a.job-card-container__link")
 
-                title = (await title_el.inner_text()).strip() if title_el else ""
-                company = (await company_el.inner_text()).strip() if company_el else ""
+                title    = (await title_el.inner_text()).strip()    if title_el    else ""
+                company  = (await company_el.inner_text()).strip()  if company_el  else ""
                 location = (await location_el.inner_text()).strip() if location_el else ""
-                href = await link_el.get_attribute("href") if link_el else ""
-                job_url = f"https://www.linkedin.com{href}" if href and href.startswith("/") else href
+                href     = await link_el.get_attribute("href")      if link_el     else ""
+                job_url  = f"https://www.linkedin.com{href}" if href and href.startswith("/") else href
 
                 if title and company and job_url:
                     jobs.append(Job(
