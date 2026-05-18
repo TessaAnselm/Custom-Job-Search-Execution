@@ -13,6 +13,7 @@ import io
 import re
 import csv
 import glob
+import shutil
 import atexit
 import asyncio
 import yaml
@@ -34,21 +35,46 @@ app.secret_key = os.urandom(24)
 RESUMES_DIR = os.path.join(os.path.dirname(__file__), "resumes")
 
 
+def _next_copy_index(pattern: str) -> int:
+    """Return the next available copy index for a versioned filename pattern."""
+    existing = glob.glob(pattern)
+    indices = []
+    for p in existing:
+        base = os.path.basename(p)
+        # extract trailing number before extension
+        m = re.search(r"(\d+)\.[^.]+$", base)
+        if m:
+            indices.append(int(m.group(1)))
+    return max(indices, default=0) + 1
+
+
 def _cleanup_on_exit():
-    """Clear jobs, tailored resumes, and profile when the app shuts down."""
+    """Archive jobs and profile with versioned copies, then reset for next session."""
+    # Archive jobs_local.json → jobs_local_copy{N}.json
     try:
+        if os.path.exists(JOBS_LOCAL_PATH):
+            jobs_dir = os.path.dirname(JOBS_LOCAL_PATH)
+            idx = _next_copy_index(os.path.join(jobs_dir, "jobs_local_copy*.json"))
+            shutil.copy2(JOBS_LOCAL_PATH, os.path.join(jobs_dir, f"jobs_local_copy{idx}.json"))
         with open(JOBS_LOCAL_PATH, "w") as f:
             f.write("[]")
     except Exception:
         pass
+
+    # Archive profile.yaml → config/profile_copy{N}.yaml
+    try:
+        if os.path.exists(PROFILE_PATH):
+            cfg_dir = os.path.dirname(PROFILE_PATH)
+            idx = _next_copy_index(os.path.join(cfg_dir, "profile_copy*.yaml"))
+            shutil.copy2(PROFILE_PATH, os.path.join(cfg_dir, f"profile_copy{idx}.yaml"))
+            os.remove(PROFILE_PATH)
+    except Exception:
+        pass
+
+    # Tailored resumes are session-specific — still wipe these
     try:
         for f in glob.glob(os.path.join(RESUMES_DIR, "resume_*.txt")):
             os.remove(f)
-    except Exception:
-        pass
-    try:
-        if os.path.exists(PROFILE_PATH):
-            os.remove(PROFILE_PATH)
     except Exception:
         pass
 
