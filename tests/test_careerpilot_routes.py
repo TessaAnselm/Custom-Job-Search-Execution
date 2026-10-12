@@ -127,6 +127,18 @@ class CareerPilotRouteTests(unittest.TestCase):
         self.assertEqual(profile["name"], "Candidate Name")
         self.assertEqual(profile["experience_years"], 8)
 
+    def test_profile_extractor_parses_qwen_thinking_and_markdown_wrappers(self):
+        response_text = (
+            "<think>I'll organize the candidate details first.</think>\n"
+            "```json\n{\"name\": \"Candidate Name\", \"experience_years\": 8}\n```"
+        )
+        with patch("ai.client.complete_sync", return_value=response_text) as complete:
+            extracted = flask_app.gpt_extract_profile("Candidate resume text")
+
+        self.assertEqual(extracted, {"name": "Candidate Name", "experience_years": 8})
+        complete.assert_called_once()
+        self.assertEqual(complete.call_args.kwargs["max_tokens"], 3000)
+
     def test_docx_text_is_extracted_without_an_additional_package(self):
         import zipfile
 

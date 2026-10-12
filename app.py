@@ -11,6 +11,7 @@ Open http://localhost:5050
 import os
 import io
 import re
+import json
 import csv
 import glob
 import shutil
@@ -369,7 +370,6 @@ def extract_text_from_upload(file_storage) -> str:
 
 def gpt_extract_profile(resume_text: str) -> dict:
     """Extract a complete profile from resume text using the configured AI provider."""
-    import json
     from ai.client import complete_sync
     prompt = (
         "You are a career profile parser. Extract a complete job-search profile from this resume.\n"
@@ -390,10 +390,31 @@ def gpt_extract_profile(resume_text: str) -> dict:
         f"Resume:\n{resume_text[:4000]}\n\n"
         "Return valid JSON with exactly these field names."
     )
+    if os.getenv("AI_PROVIDER", "openai").lower() == "vllm":
+        # Qwen3's "thinking" mode adds no value for rigid field extraction and can
+        # consume the whole token budget before any JSON is written, returning an
+        # empty response (measured: 22.6s then empty at max_tokens=800; raising the
+        # budget alone made it slower, not more reliable — 93s then still failed).
+        # /no_think is Qwen3's chat-template convention to skip reasoning for this
+        # turn; other providers don't recognize it, so only send it to vLLM.
+        prompt += "\n\n/no_think"
     raw = complete_sync(prompt, max_tokens=800)
-    # Strip any accidental markdown fences
-    raw = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
-    return json.loads(raw)
+    # Qwen may wrap the JSON in a <think> block or Markdown fences. Decode the
+    # first valid profile object instead of trying to parse those wrappers.
+    decoder = json.JSONDecoder()
+    response = raw.strip()
+    for index, character in enumerate(response):
+        if character != "{":
+            continue
+        try:
+            candidate, _ = decoder.raw_decode(response, index)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(candidate, dict) and any(
+            key in candidate for key in ("name", "full_name", "experience_years", "skills", "profile")
+        ):
+            return candidate
+    raise json.JSONDecodeError("The model response did not contain a valid profile object", response, 0)
 
 
 
@@ -799,8 +820,16 @@ def api_upload_resume():
             except Exception as exc:
                 app.logger.warning("%s profile extraction unavailable (%s)", provider, type(exc).__name__)
                 extractor_name = "vLLM endpoint" if provider == "vllm" else f"{provider} provider"
+                if isinstance(exc, json.JSONDecodeError):
+                    cause = "the model responded, but did not return valid profile JSON"
+                elif type(exc).__name__ == "VLLMUnavailableError":
+                    cause = "the endpoint could not be reached or timed out"
+                elif type(exc).__name__ == "VLLMRequestError":
+                    cause = "the endpoint rejected the request; check its model and API-key settings"
+                else:
+                    cause = "the profile could not be extracted"
                 extracted["profile_extraction_warning"] = (
-                    f"The configured {extractor_name} could not extract this profile. "
+                    f"The configured {extractor_name} could not extract this profile because {cause}. "
                     "The resume text was saved; fill and verify the profile fields below."
                 )
         else:

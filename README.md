@@ -41,6 +41,35 @@ The Akamai workshop is expected to provide a Kubernetes namespace, JupyterLab wo
 
 For additional Kubernetes deployment notes, see the [CareerPilot workshop runbook](docs/CareerPilot_Runbook.md).
 
+### Frontend screenshots
+
+These screenshots show the guided profile setup and the resume-extraction failure captured during testing. The parser has since been hardened for Qwen reasoning and Markdown-wrapped JSON; a live Akamai resume-extraction run still needs verification.
+
+<p align="center">
+  <img src="docs/image/Screenshot%202026-10-12%20at%204.34.08%E2%80%AFPM.png" alt="CareerPilot setup guide at the Akamai connection step" width="90%" />
+  <br /><em>1. The guide starts with the Akamai connection check.</em>
+</p>
+<p align="center">
+  <img src="docs/image/Screenshot%202026-10-12%20at%204.36.29%E2%80%AFPM.png" alt="CareerPilot checking the configured vLLM connection" width="90%" />
+  <br /><em>2. Checking the configured vLLM endpoint.</em>
+</p>
+<p align="center">
+  <img src="docs/image/Screenshot%202026-10-12%20at%204.36.40%E2%80%AFPM.png" alt="CareerPilot connected to Qwen3-4B" width="90%" />
+  <br /><em>3. The Qwen3-4B connection check succeeds.</em>
+</p>
+<p align="center">
+  <img src="docs/image/Screenshot%202026-10-12%20at%204.37.17%E2%80%AFPM.png" alt="CareerPilot reading an uploaded resume" width="90%" />
+  <br /><em>4. Resume upload and profile extraction begin.</em>
+</p>
+<p align="center">
+  <img src="docs/image/Screenshot%202026-10-12%20at%204.37.57%E2%80%AFPM.png" alt="Candidate profile fields left blank after extraction failed" width="90%" />
+  <br /><em>5. Captured failure state: name and experience were not extracted, so these fields need manual review.</em>
+</p>
+<p align="center">
+  <img src="docs/image/Screenshot%202026-10-12%20at%204.39.02%E2%80%AFPM.png" alt="CareerPilot reporting a vLLM profile extraction failure" width="90%" />
+  <br /><em>6. Captured issue: the connection check passes, but resume extraction fails.</em>
+</p>
+
 ---
 
 ## How It Works
