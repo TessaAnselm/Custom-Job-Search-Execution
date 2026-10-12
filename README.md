@@ -6,17 +6,38 @@ CareerPilot AI extends this Flask job-search application with an agent workflow 
 Verified Profile → Discover Jobs → Filter and Score → Explain Fit → Prepare Reviewable Drafts
 ```
 
+## Architecture: local app, remote inference
+
+The Flask app (`app.py`, templates, dashboard) runs entirely on your machine and needs no GPU — it never bundles a model. When it needs AI (profile extraction, match explanations, resume/cover-note drafts, or the CareerPilot agent), it makes an HTTP call to whatever `AI_PROVIDER` is configured. With `AI_PROVIDER=vllm`, that call goes out over the network to Qwen3-4B running on the Akamai workshop's GPU — not to a model on your machine and not to OpenAI/Anthropic/Gemini.
+
+```
+Browser → localhost:5050 (Flask app, your machine, no GPU)
+              │
+              │  AI calls only
+              ▼
+     localhost:8000/v1 ──kubectl port-forward──▶ svc/vllm (Akamai namespace)
+                                                       │
+                                                       ▼
+                                               vLLM → Qwen3-4B on the assigned GPU
+```
+
+Two ways to reach the Akamai-hosted model:
+- **From your laptop (local development):** keep the Flask app running locally, and tunnel only the inference calls with `kubectl port-forward svc/vllm 8000:8000`, then set `VLLM_HOST=http://localhost:8000/v1` in `.env`. This is the path validated end-to-end and documented below.
+- **Deployed inside the namespace:** using `k8s/careerpilot-agent.yaml`, the app runs as a pod alongside vLLM and reaches it directly via the in-cluster Service name `http://vllm:8000/v1` — no port-forward needed. This is the eventual workshop deployment path, not required for local development.
+
 ## Project status
 
 **Implemented in this repository:** multi-source job discovery and deterministic matching; the Flask profile/dashboard experience; configurable OpenAI-compatible vLLM inference; a minimal AWS Strands agent wrapping existing search and document-generation functions; profile verification, grounded recommendations, review-only application drafts; basic agent activity and inference metrics; and a Kubernetes Deployment template for the app.
 
-**Not yet verified or complete:** a live end-to-end run against the Akamai workshop's Qwen3-4B service; the actual workshop namespace, endpoint, GPU allocation, and model tool-calling configuration; and a built/published application image and deployed Kubernetes workload. The Deployment template is not a ready-to-apply release. The workshop brief lists an RTX 4000 Ada; an earlier RTX PRO 6000 mention needs verification in the assigned environment.
+**Verified:** live connectivity from a laptop to the Akamai workshop's Qwen3-4B service, via `kubectl port-forward svc/vllm 8000:8000` and `scripts/test_inference.py`, with a real model response and measured latency.
+
+**Not yet verified or complete:** a full end-to-end CareerPilot run (search → match → draft package) against the live Qwen3-4B service, including whether the deployed vLLM is configured for the tool-calling Strands' agent loop needs; the actual workshop namespace, GPU allocation; and a built/published application image and deployed Kubernetes workload. The Deployment template is not a ready-to-apply release. The workshop brief lists an RTX 4000 Ada; an earlier RTX PRO 6000 mention needs verification in the assigned environment.
 
 ## CareerPilot architecture and demo
 
 CareerPilot reuses the existing scrapers, profile-derived search configuration, deterministic scoring, Flask dashboard, and resume/cover-note generators. AWS Strands orchestrates bounded tools over those functions; the vLLM provider routes model requests to the configured OpenAI-compatible endpoint. The intended demo discovers real postings, explains match evidence and gaps from a candidate-verified profile, suggests factual resume tailoring, and prepares a draft package. A person reviews and approves any application; CareerPilot does not submit applications automatically.
 
-The Akamai workshop is expected to provide a Kubernetes namespace, JupyterLab workstation, NVIDIA GPU, vLLM serving `Qwen/Qwen3-4B`, an OpenAI-compatible API, Prometheus metrics, namespace-scoped Kubernetes access, and an agent runtime. The documented workshop default `http://vllm:8000/v1` is an internal endpoint; it is not expected to be reachable from a local laptop. Confirm the actual service/model configuration from the workshop environment before deployment. The app can show client/agent measurements and vLLM `/metrics` aggregates; server aggregates are not per-task measurements, and per-run TTFT is unavailable in the current non-streaming client path.
+The Akamai workshop is expected to provide a Kubernetes namespace, JupyterLab workstation, NVIDIA GPU, vLLM serving `Qwen/Qwen3-4B`, an OpenAI-compatible API, Prometheus metrics, namespace-scoped Kubernetes access, and an agent runtime. `http://vllm:8000/v1` is the in-cluster endpoint; reach it from a laptop via `kubectl port-forward` as described in [Architecture](#architecture-local-app-remote-inference) above. Confirm the actual service/model configuration from the workshop environment before deployment. The app can show client/agent measurements and vLLM `/metrics` aggregates; server aggregates are not per-task measurements, and per-run TTFT is unavailable in the current non-streaming client path.
 
 For additional Kubernetes deployment notes, see the [CareerPilot workshop runbook](docs/CareerPilot_Runbook.md).
 
@@ -138,7 +159,8 @@ GROQ_API_KEY=...
 OPENAI_API_KEY=sk-...
 
 # Akamai workshop's OpenAI-compatible vLLM endpoint (AI_PROVIDER=vllm)
-# Internal workshop default; configure/use from Jupyter or the assigned namespace.
+# In Jupyter/a namespace pod: http://vllm:8000/v1 (default below)
+# From your laptop: http://localhost:8000/v1, after `kubectl port-forward svc/vllm 8000:8000`
 VLLM_HOST=http://vllm:8000/v1
 MODEL_NAME=Qwen/Qwen3-4B
 VLLM_API_KEY=
@@ -160,9 +182,16 @@ GMAIL_APP_PASSWORD=
 
 ## Run CareerPilot with Akamai vLLM
 
-The workshop provides a Kubernetes namespace, JupyterLab workstation, NVIDIA GPU, vLLM with `Qwen/Qwen3-4B`, an OpenAI-compatible endpoint, Prometheus metrics, scoped Kubernetes access, and an agent runtime. The workshop defaults `VLLM_HOST` to `http://vllm:8000/v1`; that is an internal service address and is not expected to be reachable from your local laptop. Run the live steps from Jupyter or a workload in the assigned namespace. Check the workshop-provided environment for the actual namespace, endpoint, model, and GPU allocation; the earlier RTX PRO 6000 mention is unverified (the brief lists RTX 4000 Ada). Do not change the workshop's vLLM or GPU resources for this project.
+The workshop provides a Kubernetes namespace, JupyterLab workstation, NVIDIA GPU, vLLM with `Qwen/Qwen3-4B`, an OpenAI-compatible endpoint, Prometheus metrics, scoped Kubernetes access, and an agent runtime. `http://vllm:8000/v1` is the in-cluster Service address — it only resolves from inside the namespace (Jupyter, or a pod like the one `k8s/careerpilot-agent.yaml` deploys). From your laptop, reach the same model by tunneling through `kubectl` instead — see below. Check the workshop-provided environment for the actual namespace, endpoint, model, and GPU allocation; the earlier RTX PRO 6000 mention is unverified (the brief lists RTX 4000 Ada). Do not change the workshop's vLLM or GPU resources for this project.
 
-1. Install dependencies in the environment that can reach vLLM, then set `AI_PROVIDER=vllm`, `VLLM_HOST`, and `MODEL_NAME` in `.env` or the runtime environment. Set `VLLM_API_KEY` only if the service requires it; never put credentials in source control or print them in logs.
+0. **From your laptop:** install `kubectl` (`brew install kubectl` on Mac), save the kubeconfig the workshop gives you (e.g. `./.kube/s01.yaml`), then in a dedicated terminal you leave running:
+   ```bash
+   export KUBECONFIG=./.kube/s01.yaml
+   kubectl port-forward svc/vllm 8000:8000
+   ```
+   This makes the remote model reachable at `http://localhost:8000/v1` for as long as that terminal stays open. Skip this step if you're working directly inside Jupyter or a pod in the namespace — there, `http://vllm:8000/v1` already resolves.
+
+1. Set `AI_PROVIDER=vllm` and `MODEL_NAME=Qwen/Qwen3-4B` in `.env`. Set `VLLM_HOST=http://localhost:8000/v1` (laptop + port-forward) or `http://vllm:8000/v1` (already inside the namespace). Set `VLLM_API_KEY` only if the service requires it; never put credentials in source control or print them in logs.
 2. Test the model connection before starting the app:
 
    ```bash

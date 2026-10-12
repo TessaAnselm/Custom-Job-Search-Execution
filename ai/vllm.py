@@ -55,7 +55,10 @@ class VLLMConfig:
 
     def client_options(self) -> dict:
         return {
-            "api_key": self.api_key,
+            # Most vLLM deployments don't enforce auth, but the OpenAI SDK requires a
+            # non-empty api_key string or it raises "missing credentials" before any
+            # request is sent. "EMPTY" is the common vLLM-community placeholder value.
+            "api_key": self.api_key or "EMPTY",
             "base_url": self.base_url,
             "timeout": self.timeout_seconds,
         }
@@ -126,10 +129,15 @@ async def complete_async(prompt: str, max_tokens: int = 600) -> str:
 
 
 def check_connection(prompt: str = "Reply with exactly: vLLM connection OK") -> dict:
-    """Make one small live request and return measured request latency."""
+    """Make one small live request and return measured request latency.
+
+    Qwen3 models emit hidden reasoning tokens before any visible answer, so the
+    token budget here must be large enough to survive that prefix — a very small
+    max_tokens can exhaust the whole budget on reasoning and return empty content.
+    """
     config = VLLMConfig.from_env()
     started_at = time.perf_counter()
-    response = complete_sync(prompt, max_tokens=16)
+    response = complete_sync(prompt, max_tokens=200)
     elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
     return {
         "ok": True,
