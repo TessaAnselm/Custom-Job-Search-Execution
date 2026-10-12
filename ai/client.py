@@ -7,6 +7,7 @@ Supported providers:
   groq       → Groq (free tier, fast open-source models)
   openai     → OpenAI GPT
   ollama     → Local models via Ollama (completely free, no API key)
+  vllm       → OpenAI-compatible Akamai workshop endpoint
 
 Set in .env:
   AI_PROVIDER=gemini
@@ -64,6 +65,10 @@ async def complete_async(prompt: str, max_tokens: int = 600) -> str:
         response = ollama.generate(model=model, prompt=prompt)
         return response["response"].strip()
 
+    if p == "vllm":
+        from ai.vllm import complete_async as vllm_complete_async
+        return await vllm_complete_async(prompt, max_tokens=max_tokens)
+
     # Default: openai
     from openai import AsyncOpenAI
     client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
@@ -113,6 +118,10 @@ def complete_sync(prompt: str, max_tokens: int = 800) -> str:
         import ollama
         model = os.getenv("OLLAMA_MODEL", "llama3")
         return ollama.generate(model=model, prompt=prompt)["response"].strip()
+
+    if p == "vllm":
+        from ai.vllm import complete_sync as vllm_complete_sync
+        return vllm_complete_sync(prompt, max_tokens=max_tokens)
 
     # Default: openai
     from openai import OpenAI

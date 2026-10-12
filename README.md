@@ -1,10 +1,24 @@
-# Custom Job Search Execution
+# CareerPilot AI — Custom Job Search Execution
 
-An AI-powered job search dashboard that scrapes multiple job boards, filters by your location and experience level, scores every result against your resume, and surfaces the top matches — no manual keyword entry required.
+CareerPilot AI extends this Flask job-search application with an agent workflow for discovering real roles, evaluating fit against a verified candidate profile, and preparing truthful application drafts for human review. The project prioritizes reuse of the existing search and matching pipeline and self-hosted inference through Akamai-hosted vLLM.
 
 ```
-Upload Resume → Extract Profile → Scrape All Sources → Filter → Score → Ranked Matches
+Verified Profile → Discover Jobs → Filter and Score → Explain Fit → Prepare Reviewable Drafts
 ```
+
+## Project status
+
+**Implemented in this repository:** multi-source job discovery and deterministic matching; the Flask profile/dashboard experience; configurable OpenAI-compatible vLLM inference; a minimal AWS Strands agent wrapping existing search and document-generation functions; profile verification, grounded recommendations, review-only application drafts; basic agent activity and inference metrics; and a Kubernetes Deployment template for the app.
+
+**Not yet verified or complete:** a live end-to-end run against the Akamai workshop's Qwen3-4B service; the actual workshop namespace, endpoint, GPU allocation, and model tool-calling configuration; and a built/published application image and deployed Kubernetes workload. The Deployment template is not a ready-to-apply release. The workshop brief lists an RTX 4000 Ada; an earlier RTX PRO 6000 mention needs verification in the assigned environment.
+
+## CareerPilot architecture and demo
+
+CareerPilot reuses the existing scrapers, profile-derived search configuration, deterministic scoring, Flask dashboard, and resume/cover-note generators. AWS Strands orchestrates bounded tools over those functions; the vLLM provider routes model requests to the configured OpenAI-compatible endpoint. The intended demo discovers real postings, explains match evidence and gaps from a candidate-verified profile, suggests factual resume tailoring, and prepares a draft package. A person reviews and approves any application; CareerPilot does not submit applications automatically.
+
+The Akamai workshop is expected to provide a Kubernetes namespace, JupyterLab workstation, NVIDIA GPU, vLLM serving `Qwen/Qwen3-4B`, an OpenAI-compatible API, Prometheus metrics, namespace-scoped Kubernetes access, and an agent runtime. The documented workshop default `http://vllm:8000/v1` is an internal endpoint; it is not expected to be reachable from a local laptop. Confirm the actual service/model configuration from the workshop environment before deployment. The app can show client/agent measurements and vLLM `/metrics` aggregates; server aggregates are not per-task measurements, and per-run TTFT is unavailable in the current non-streaming client path.
+
+For environment-specific smoke-test and deployment steps, see the [CareerPilot workshop runbook](docs/CareerPilot_Runbook.md).
 
 ---
 
@@ -39,7 +53,7 @@ python3 -m playwright install chromium   # needed for LinkedIn + Indeed
 
 # 3. Configure .env
 cp .env.example .env
-# Set one AI provider key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, GROQ_API_KEY, or OPENAI_API_KEY
+# Set AI_PROVIDER and the matching provider configuration in .env
 # Set LINKEDIN_LI_AT if you want LinkedIn results (see below)
 
 # 4. Launch
@@ -115,11 +129,18 @@ The cookie expires when you log out. LinkedIn searches jobs posted in the last 2
 
 ```env
 # AI provider — pick one
-AI_PROVIDER=anthropic        # anthropic | gemini | groq | openai | ollama
+AI_PROVIDER=anthropic        # anthropic | gemini | groq | openai | ollama | vllm
 ANTHROPIC_API_KEY=sk-ant-...
 GOOGLE_API_KEY=...
 GROQ_API_KEY=...
 OPENAI_API_KEY=sk-...
+
+# Akamai workshop's OpenAI-compatible vLLM endpoint (AI_PROVIDER=vllm)
+# Internal workshop default; configure/use from Jupyter or the assigned namespace.
+VLLM_HOST=http://vllm:8000/v1
+MODEL_NAME=Qwen/Qwen3-4B
+VLLM_API_KEY=
+VLLM_TIMEOUT_SECONDS=30
 
 # LinkedIn scraping (optional)
 LINKEDIN_LI_AT=

@@ -48,6 +48,15 @@
 
   <!-- Profile Form -->
   <form id="profileForm">
+    <div class="detail-card" style="margin-bottom:1rem;">
+      <div class="form-group" style="margin:0;">
+        <label style="display:flex;align-items:flex-start;gap:.6rem;text-transform:none;letter-spacing:0;font-size:13px;color:var(--text);">
+          <input type="checkbox" name="profile_verified" {% if profile.get('profile_verified') %}checked{% endif %} style="width:auto;margin-top:.15rem;" />
+          I reviewed this profile and confirm these skills, experience, and resume details are accurate.
+        </label>
+        <p style="font-size:11px;color:var(--text-dim);margin:.4rem 0 0 1.4rem;">Required before CareerPilot can use this profile. Uncheck it whenever you edit the facts.</p>
+      </div>
+    </div>
     <div class="form-grid">
 
       <div class="detail-card">

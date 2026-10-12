@@ -16,6 +16,7 @@ import glob
 import shutil
 import atexit
 import asyncio
+import time
 import yaml
 from datetime import datetime, date
 from flask import Flask, render_template, jsonify, request, Response, redirect
@@ -372,7 +373,7 @@ def gpt_extract_profile(resume_text: str) -> dict:
 
 
 
-async def _run_standalone_search() -> list[dict]:
+async def _run_standalone_search(include_agent_context: bool = False) -> list[dict]:
     """Scrape all enabled sources + score — no Temporal or Google Sheets required."""
     import ssl, certifi, aiohttp
     from scoring.scorer import JobScorer
@@ -495,15 +496,17 @@ async def _run_standalone_search() -> list[dict]:
     # ── Step 3: AI explanation only on the top 20 — no wasted calls ───────────
     results = []
     for fast_score, job, jd, fast_explanation in top20:
+        breakdown = {}
         try:
             full        = await scorer.score(jd)
             score       = full["score"]
             explanation = full.get("explanation", fast_explanation)
+            breakdown  = full.get("breakdown", {})
         except Exception:
             score       = fast_score
             explanation = fast_explanation
 
-        results.append({
+        row = {
             "_row_id":          job.id,
             "Date Found":       today,
             "Company":          job.company,
@@ -524,10 +527,17 @@ async def _run_standalone_search() -> list[dict]:
             "Resume Version":   "",
             "Cover Note Draft": "",
             "_is_preview":      False,
-        })
+        }
+        if include_agent_context:
+            row["_agent_context"] = {"job": jd, "breakdown": breakdown}
+        results.append(row)
 
     results.sort(key=lambda j: int(j.get("Match Score") or 0), reverse=True)
-    save_local_jobs(results)
+    # Keep transient job descriptions out of persisted dashboard rows.
+    save_local_jobs([
+        {key: value for key, value in row.items() if key != "_agent_context"}
+        for row in results
+    ])
     return results
 
 
@@ -680,6 +690,7 @@ def api_approve():
 def api_save_profile():
     try:
         data = request.get_json()
+        data["profile_verified"] = bool(data.get("profile_verified", False))
         save_profile(data)
         return jsonify({"ok": True})
     except Exception as e:
@@ -702,17 +713,32 @@ def api_upload_resume():
             "groq":      bool(os.getenv("GROQ_API_KEY")),
             "openai":    bool(os.getenv("OPENAI_API_KEY")),
             "ollama":    True,
+            "vllm":      bool(os.getenv("VLLM_HOST", "http://vllm:8000/v1")),
         }.get(provider, False)
 
         if has_key:
-            structured = gpt_extract_profile(text)
-            extracted.update(structured)
+            try:
+                structured = gpt_extract_profile(text)
+                extracted.update(structured)
+            except Exception as exc:
+                if provider != "vllm":
+                    raise
+                app.logger.warning("vLLM profile extraction unavailable (%s)", type(exc).__name__)
+                extracted["profile_extraction_warning"] = (
+                    "The configured vLLM endpoint could not extract this profile. "
+                    "The resume text was saved; fill and verify the profile fields below."
+                )
 
         # Build and save a complete profile.yaml immediately
         profile = _build_profile_from_extracted(extracted, text)
         save_profile(profile)
 
-        return jsonify({"ok": True, "extracted": extracted, "profile": profile})
+        return jsonify({
+            "ok": True,
+            "extracted": extracted,
+            "profile": profile,
+            "warning": extracted.get("profile_extraction_warning"),
+        })
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -720,6 +746,7 @@ def api_upload_resume():
 def _build_profile_from_extracted(extracted: dict, raw_resume_text: str) -> dict:
     """Map GPT-extracted fields into the profile.yaml schema."""
     return {
+        "profile_verified": False,
         "name": extracted.get("name", ""),
         "experience_years": extracted.get("experience_years", 0),
         "role_type": extracted.get("role_type", "IC"),
@@ -747,6 +774,80 @@ def _build_profile_from_extracted(extracted: dict, raw_resume_text: str) -> dict
         "minimum_score": 65,
         "base_resume": extracted.get("summary", "") + "\n\n" + raw_resume_text.strip(),
     }
+
+
+@app.route("/api/careerpilot/run", methods=["POST"])
+def api_run_careerpilot():
+    if os.getenv("AI_PROVIDER", "openai").lower() != "vllm":
+        return jsonify({
+            "ok": False,
+            "error": "Select AI_PROVIDER=vllm to run CareerPilot without external AI APIs.",
+        }), 409
+    if not load_profile().get("profile_verified"):
+        return jsonify({
+            "ok": False,
+            "error": "Review and verify your candidate profile on the Profile page first.",
+        }), 409
+
+    activities = []
+    def record_activity(activity, status):
+        activities.append({
+            "time": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "activity": activity,
+            "status": status,
+        })
+
+    try:
+        from ai.telemetry import (
+            fetch_vllm_metrics,
+            inference_delta,
+            inference_snapshot,
+            prometheus_current,
+        )
+        from ai.vllm import VLLMConfig
+        from careerpilot.agent import run_careerpilot
+        record_activity("CareerPilot run", "started")
+        inference_before = inference_snapshot()
+        started_at = time.perf_counter()
+        result = asyncio.run(run_careerpilot(
+            search_jobs=lambda: _run_standalone_search(include_agent_context=True),
+            load_profile=load_profile,
+            event_callback=record_activity,
+        ))
+        wall_latency_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        record_activity("CareerPilot run", "succeeded")
+        inference_after = inference_snapshot()
+        provider_delta = inference_delta(inference_before, inference_after)
+        config = VLLMConfig.from_env()
+        model_server_metrics = prometheus_current(fetch_vllm_metrics(config), config.model)
+        agent_metrics = result.get("agent_metrics", {})
+        result["inference_metrics"] = {
+            "model_name": config.model,
+            "model_requests_this_run": provider_delta["requests"] + agent_metrics.get("model_requests", 0),
+            "provider_requests_this_run": provider_delta["requests"],
+            "agent_model_requests_this_run": agent_metrics.get("model_requests", 0),
+            "application_request_latency_ms_average": provider_delta["latency_ms_average"],
+            "agent_model_latency_ms": agent_metrics.get("model_latency_ms"),
+            "time_to_first_token_ms_this_run": None,
+            "time_to_first_token_note": "Per-run TTFT is not available from the current non-streaming client path.",
+            "agent_input_tokens": agent_metrics.get("input_tokens"),
+            "agent_output_tokens": agent_metrics.get("output_tokens"),
+            "agent_output_tokens_per_second_derived": agent_metrics.get("derived_output_tokens_per_second"),
+            "agent_tool_calls": agent_metrics.get("tools", []),
+            "task_wall_latency_ms": wall_latency_ms,
+            "task_status": "succeeded",
+            "vllm_server_metrics": model_server_metrics,
+        }
+        result["activity_log"] = activities
+        return jsonify({"ok": True, **result})
+    except Exception as exc:
+        record_activity("CareerPilot run", "failed")
+        app.logger.exception("CareerPilot run failed")
+        return jsonify({
+            "ok": False,
+            "error": f"CareerPilot run failed ({type(exc).__name__}). Check server logs for details.",
+            "activity_log": activities,
+        }), 502
 
 
 @app.route("/api/save-resume/<row_id>", methods=["POST"])
@@ -880,4 +981,6 @@ def api_workflow_status(workflow_id):
 
 if __name__ == "__main__":
     print("Job Search Dashboard → http://localhost:5050")
-    app.run(debug=True, port=5050)
+    # Debug mode enables Werkzeug's interactive debugger (arbitrary code execution if ever
+    # network-reachable) — opt in explicitly for local laptop use only, never in a deployed pod.
+    app.run(debug=os.getenv("FLASK_DEBUG", "0") == "1", port=5050)

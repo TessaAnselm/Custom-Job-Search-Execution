@@ -51,6 +51,18 @@
 
   {% else %}
 
+  <section class="agent-panel">
+    <div class="agent-panel-copy">
+      <h2>CareerPilot AI</h2>
+      <p>Search real postings, explain match evidence, and prepare a draft application package with Akamai-hosted inference. A human reviews everything before any application action.</p>
+    </div>
+    <button class="btn btn-primary" id="runCareerPilotBtn">Run CareerPilot</button>
+    <div id="careerPilotStatus" class="agent-status" role="status" aria-live="polite"></div>
+    <div id="careerPilotMetrics" class="agent-metrics hidden"></div>
+    <div id="careerPilotActivity" class="agent-activity hidden"></div>
+    <div id="careerPilotResults" class="agent-results hidden"></div>
+  </section>
+
   <!-- Scored results banner -->
   {% if using_local %}
   <div class="preview-banner" style="background:#0a1f0a;border-color:#1a4a1a;">

@@ -22,7 +22,10 @@ groq>=0.9.0
 
 # OpenAI — no free tier
 # AI_PROVIDER=openai
-openai>=1.30.0
+openai>=1.30.0,<3.0.0
+
+# Agent orchestration against the existing OpenAI-compatible vLLM provider
+strands-agents[openai]>=1.0.0,<2.0.0
 
 # Ollama — 100% free, runs locally (install Ollama separately from https://ollama.com)
 # AI_PROVIDER=ollama

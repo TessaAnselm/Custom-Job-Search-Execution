@@ -47,6 +47,11 @@ async function handleFile(file) {
         industries_avoid:     (p.industries || {}).avoid     || p.industries_avoid,
       });
       if (p.base_resume) document.getElementById('baseResumeText').value = p.base_resume;
+      if (data.warning) {
+        uploadStatus.textContent = data.warning;
+        uploadStatus.classList.add('status-error');
+        return;
+      }
       uploadStatus.textContent = 'Profile extracted — starting job search…';
       uploadStatus.classList.add('status-ok');
       await runSearchAndRedirect();
@@ -95,6 +100,7 @@ document.getElementById('profileForm').addEventListener('submit', async e => {
   const fd = new FormData(e.target);
 
   const payload = {
+    profile_verified: fd.get('profile_verified') === 'on',
     name:             fd.get('name'),
     experience_years: parseInt(fd.get('experience_years')) || 0,
     role_type:        fd.get('role_type'),

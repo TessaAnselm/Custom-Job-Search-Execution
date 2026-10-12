@@ -1,0 +1,53 @@
+# Replace the namespace and image with values assigned to your workshop account.
+# This deploys only the CareerPilot app; it does not create or modify vLLM.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: careerpilot-agent
+  namespace: REPLACE_WITH_ASSIGNED_NAMESPACE
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: careerpilot-agent
+  template:
+    metadata:
+      labels:
+        app: careerpilot-agent
+    spec:
+      containers:
+        - name: careerpilot
+          image: REPLACE_WITH_WORKSHOP_IMAGE
+          imagePullPolicy: IfNotPresent
+          command: ["python", "app.py"]
+          ports:
+            - name: http
+              containerPort: 5050
+          env:
+            - name: AI_PROVIDER
+              value: vllm
+            - name: VLLM_HOST
+              value: http://vllm:8000/v1
+            - name: MODEL_NAME
+              value: Qwen/Qwen3-4B
+            - name: VLLM_TIMEOUT_SECONDS
+              value: "60"
+            - name: VLLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: careerpilot-secrets
+                  key: vllm-api-key
+                  optional: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi

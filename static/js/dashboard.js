@@ -42,6 +42,111 @@ document.getElementById('triggerSearchBtn')?.addEventListener('click', openSearc
 document.getElementById('triggerSearchBtn2')?.addEventListener('click', openSearchModal);
 document.getElementById('triggerSearchBtn3')?.addEventListener('click', openSearchModal);
 
+const careerPilotButton = document.getElementById('runCareerPilotBtn');
+careerPilotButton?.addEventListener('click', async () => {
+  const status = document.getElementById('careerPilotStatus');
+  const results = document.getElementById('careerPilotResults');
+  const metricsPanel = document.getElementById('careerPilotMetrics');
+  const activityPanel = document.getElementById('careerPilotActivity');
+  careerPilotButton.disabled = true;
+  status.textContent = 'Running job discovery, matching, and draft preparation on the configured vLLM endpoint…';
+  results.replaceChildren();
+  results.classList.add('hidden');
+  metricsPanel.replaceChildren(); metricsPanel.classList.add('hidden');
+  activityPanel.replaceChildren(); activityPanel.classList.add('hidden');
+
+  try {
+    const response = await fetch('/api/careerpilot/run', { method: 'POST' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.error || 'CareerPilot run failed.');
+
+    status.textContent = 'CareerPilot finished. Drafts require your review; nothing was submitted.';
+    const summary = document.createElement('p');
+    summary.textContent = data.answer?.summary || 'Match analysis complete.';
+    results.appendChild(summary);
+
+    const assessments = new Map((data.answer?.assessments || []).map(item => [item.job_id, item]));
+    for (const job of data.matches || []) {
+      const card = document.createElement('article');
+      card.className = 'agent-result-card';
+      const heading = document.createElement('h3');
+      heading.textContent = `${job['Job Title'] || 'Role'} — ${job.Company || 'Company'} · ${job['Match Score'] || '—'}/100`;
+      card.appendChild(heading);
+      const details = assessments.get(String(job._row_id));
+      const explanation = document.createElement('p');
+      explanation.textContent = details?.explanation || job['Why It Fits'] || 'No explanation available.';
+      card.appendChild(explanation);
+      if (details?.evidence?.length || details?.gaps_or_unknowns?.length || details?.resume_recommendations?.length) {
+        const list = document.createElement('ul');
+        for (const text of [
+          ...(details.evidence || []).map(value => `Evidence: ${value}`),
+          ...(details.gaps_or_unknowns || []).map(value => `Gap or unknown: ${value}`),
+          ...(details.resume_recommendations || []).map(value => `Resume suggestion: ${value}`),
+        ]) {
+          const item = document.createElement('li'); item.textContent = text; list.appendChild(item);
+        }
+        card.appendChild(list);
+      }
+      results.appendChild(card);
+    }
+
+    if (data.application_package) {
+      const card = document.createElement('article');
+      card.className = 'agent-result-card';
+      const heading = document.createElement('h3');
+      heading.textContent = 'Application package — human review required';
+      card.appendChild(heading);
+      for (const [label, value] of [['Tailored resume draft', data.application_package.resume_draft], ['Cover note draft', data.application_package.cover_note_draft]]) {
+        const disclosure = document.createElement('details');
+        const summary = document.createElement('summary'); summary.textContent = label;
+        const pre = document.createElement('pre'); pre.textContent = value || '';
+        disclosure.append(summary, pre); card.appendChild(disclosure);
+      }
+      results.appendChild(card);
+    }
+    results.classList.remove('hidden');
+
+    const metrics = data.inference_metrics || {};
+    const metricsTitle = document.createElement('h3'); metricsTitle.textContent = 'Inference performance';
+    metricsPanel.appendChild(metricsTitle);
+    const metricsLines = [
+      `Model: ${metrics.model_name || 'unknown'}`,
+      `Model requests this run: ${metrics.model_requests_this_run ?? 'unavailable'}`,
+      `Application request average latency: ${metrics.application_request_latency_ms_average == null ? 'unavailable' : `${metrics.application_request_latency_ms_average} ms`}`,
+      `Agent model latency: ${metrics.agent_model_latency_ms == null ? 'unavailable' : `${metrics.agent_model_latency_ms} ms (Strands measured)`}`,
+      `Agent TTFT: ${metrics.time_to_first_token_ms_this_run == null ? 'unavailable' : `${metrics.time_to_first_token_ms_this_run} ms`} — ${metrics.time_to_first_token_note || ''}`,
+      `Agent output tokens: ${metrics.agent_output_tokens ?? 'unavailable'}`,
+      `Derived agent output throughput: ${metrics.agent_output_tokens_per_second_derived == null ? 'unavailable' : `${metrics.agent_output_tokens_per_second_derived} tokens/s (derived)`}`,
+      `Task wall latency: ${metrics.task_wall_latency_ms ?? 'unavailable'} ms · ${metrics.task_status || 'unknown'}`,
+    ];
+    for (const line of metricsLines) { const p = document.createElement('p'); p.textContent = line; metricsPanel.appendChild(p); }
+    const server = metrics.vllm_server_metrics || {};
+    const serverLine = document.createElement('p');
+    serverLine.textContent = server.available
+      ? `vLLM server aggregate since start: TTFT ${server.time_to_first_token_ms_average ?? 'n/a'} ms; request latency ${server.request_latency_ms_average ?? 'n/a'} ms; generated tokens ${server.generated_tokens_total ?? 'n/a'}; throughput ${server.aggregate_tokens_per_second ?? 'n/a'} tokens/s.`
+      : `vLLM /metrics unavailable (${server.reason || 'not reachable'}).`;
+    metricsPanel.appendChild(serverLine);
+    metricsPanel.classList.remove('hidden');
+
+    const events = data.activity_log || [];
+    const activityTitle = document.createElement('h3'); activityTitle.textContent = 'Agent activity';
+    activityPanel.appendChild(activityTitle);
+    const activityList = document.createElement('ul');
+    for (const event of events) {
+      const item = document.createElement('li');
+      item.textContent = `${event.time || ''} · ${event.activity || 'activity'} · ${event.status || ''}`;
+      activityList.appendChild(item);
+    }
+    activityPanel.appendChild(activityList);
+    activityPanel.classList.remove('hidden');
+  } catch (error) {
+    status.textContent = error.message || 'CareerPilot run failed.';
+    activityPanel.classList.add('hidden');
+  } finally {
+    careerPilotButton.disabled = false;
+  }
+});
+
 function closeModal() {
   modal.classList.add('hidden');
 }
