@@ -18,7 +18,7 @@ CareerPilot reuses the existing scrapers, profile-derived search configuration, 
 
 The Akamai workshop is expected to provide a Kubernetes namespace, JupyterLab workstation, NVIDIA GPU, vLLM serving `Qwen/Qwen3-4B`, an OpenAI-compatible API, Prometheus metrics, namespace-scoped Kubernetes access, and an agent runtime. The documented workshop default `http://vllm:8000/v1` is an internal endpoint; it is not expected to be reachable from a local laptop. Confirm the actual service/model configuration from the workshop environment before deployment. The app can show client/agent measurements and vLLM `/metrics` aggregates; server aggregates are not per-task measurements, and per-run TTFT is unavailable in the current non-streaming client path.
 
-For environment-specific smoke-test and deployment steps, see the [CareerPilot workshop runbook](docs/CareerPilot_Runbook.md).
+For additional Kubernetes deployment notes, see the [CareerPilot workshop runbook](docs/CareerPilot_Runbook.md).
 
 ---
 
@@ -62,6 +62,8 @@ python3 app.py
 ```
 
 Upload your resume on the Profile page. The app extracts your profile, runs a search, and shows your ranked matches — usually within 1–2 minutes.
+
+To use the CareerPilot agent, choose `AI_PROVIDER=vllm` and configure the workshop endpoint as described below. CareerPilot requires a verified profile and runs from the dashboard.
 
 ---
 
@@ -155,6 +157,28 @@ TELEGRAM_CHAT_ID=
 GMAIL_USER=
 GMAIL_APP_PASSWORD=
 ```
+
+## Run CareerPilot with Akamai vLLM
+
+The workshop provides a Kubernetes namespace, JupyterLab workstation, NVIDIA GPU, vLLM with `Qwen/Qwen3-4B`, an OpenAI-compatible endpoint, Prometheus metrics, scoped Kubernetes access, and an agent runtime. The workshop defaults `VLLM_HOST` to `http://vllm:8000/v1`; that is an internal service address and is not expected to be reachable from your local laptop. Run the live steps from Jupyter or a workload in the assigned namespace. Check the workshop-provided environment for the actual namespace, endpoint, model, and GPU allocation; the earlier RTX PRO 6000 mention is unverified (the brief lists RTX 4000 Ada). Do not change the workshop's vLLM or GPU resources for this project.
+
+1. Install dependencies in the environment that can reach vLLM, then set `AI_PROVIDER=vllm`, `VLLM_HOST`, and `MODEL_NAME` in `.env` or the runtime environment. Set `VLLM_API_KEY` only if the service requires it; never put credentials in source control or print them in logs.
+2. Test the model connection before starting the app:
+
+   ```bash
+   python scripts/test_inference.py
+   ```
+
+   A successful probe reports the configured model and measured round-trip latency. This confirms basic inference connectivity, not agent tool-calling compatibility; validate the full dashboard workflow against the deployed Qwen/vLLM configuration.
+
+3. Start the app with `python app.py` and open `http://localhost:5050`. Upload a synthetic or consented resume, review the extracted profile, and explicitly confirm its facts on the Profile page. Select **Run CareerPilot** on the dashboard.
+4. Review the real job matches, evidence and gaps, resume recommendations, activity, and draft application package. The package remains in Review; CareerPilot never submits an application or message.
+
+The Strands agent treats scraped job descriptions as untrusted data, not instructions. It only uses a profile after user verification, must ground qualifications in that profile, and requires human review of generated drafts. Use the minimum candidate data needed for a demo, keep credentials in environment variables or a Kubernetes Secret, and avoid logging resumes or contact details.
+
+Run local mocked checks with `python -m unittest discover -s tests -v`; these require neither Akamai access nor a GPU. Dashboard request timings are client/agent measurements, while vLLM `/metrics` values are server-wide aggregates. Per-run TTFT is unavailable in the current non-streaming client path.
+
+The Kubernetes file at `k8s/careerpilot-agent.yaml` is a deployment template, not a ready-to-apply manifest: replace its namespace and image placeholders and confirm the in-namespace vLLM service before use. It deploys only the app, not another model server.
 
 ---
 
