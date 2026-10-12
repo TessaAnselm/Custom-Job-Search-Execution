@@ -28,20 +28,47 @@
 
   <div class="page-header">
     <h1>Set Up Your Profile</h1>
-    <p class="page-subtitle">Start here — upload your resume and we'll fill everything in automatically. Your profile tells the AI what jobs to surface and how to tailor your application documents.</p>
+    <p class="page-subtitle">Follow the guide from a vLLM connection check through profile review, job matching, and a draft you control.</p>
   </div>
+
+  <section class="careerpilot-journey" id="careerPilotJourney" aria-label="CareerPilot setup guide"
+    data-page="profile"
+    data-has-resume="{{ 'true' if profile.get('base_resume', '').strip() else 'false' }}"
+    data-profile-verified="{{ 'true' if profile.get('profile_verified') else 'false' }}"
+    data-has-matches="false">
+    <ol class="careerpilot-journey-steps" aria-label="Application preparation steps">
+      <li class="careerpilot-journey-step">Connect Akamai</li>
+      <li class="careerpilot-journey-step">Load resume</li>
+      <li class="careerpilot-journey-step">Verify facts</li>
+      <li class="careerpilot-journey-step">Find and score</li>
+      <li class="careerpilot-journey-step">Create draft</li>
+      <li class="careerpilot-journey-step">You submit</li>
+    </ol>
+    <div class="careerpilot-journey-coach">
+      <img class="careerpilot-journey-monster" src="/static/monsters/monster-wave.png" alt="" aria-hidden="true" />
+      <div class="careerpilot-journey-copy">
+        <strong class="careerpilot-journey-title">Step 1 of 6 · Connect Akamai AI</strong>
+        <p class="careerpilot-journey-message" role="status" aria-live="polite">Test the Akamai vLLM connection. The check sends a tiny test prompt, not your resume.</p>
+        <div class="careerpilot-journey-actions">
+          <button class="btn btn-primary careerpilot-journey-action" id="careerPilotJourneyAction" type="button">Test Akamai connection</button>
+          <a href="/" class="btn btn-ghost hidden" id="careerPilotViewJobs">Go to Jobs</a>
+        </div>
+        <p class="careerpilot-journey-status" id="vllmConnectionStatus" role="status" aria-live="polite">This checks the configured endpoint; it does not start a job search.</p>
+      </div>
+    </div>
+  </section>
 
   <!-- Resume Upload Card -->
   <div class="detail-card upload-card">
     <h3>Upload Resume</h3>
-    <p style="color:var(--text-dim);margin-bottom:1rem;">
-      Upload a PDF or plain text resume. The system will extract your name, skills, and experience and fill in the fields below automatically.
+        <p style="color:var(--text-dim);margin-bottom:1rem;">
+      Upload a PDF, DOCX, or plain text resume (max 5MB). If the configured AI is available, it will suggest profile fields; review and correct them before confirming.
     </p>
     <div class="upload-zone" id="uploadZone">
-      <input type="file" id="resumeFile" accept=".pdf,.txt,.doc,.docx" hidden />
+      <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" hidden />
       <div class="upload-icon">&#128196;</div>
       <p class="upload-label">Drop your resume here or <span class="upload-link" onclick="document.getElementById('resumeFile').click()">browse</span></p>
-      <p class="upload-hint">PDF or plain text · Max 5MB</p>
+      <p class="upload-hint">Text-based PDF, DOCX, or TXT · Max 5MB</p>
     </div>
     <div id="uploadStatus" class="upload-status hidden"></div>
   </div>
@@ -184,6 +211,7 @@
 
 <div id="toast" class="toast hidden"></div>
 
+<script src="/static/js/careerpilot-journey.js"></script>
 <script src="/static/js/profile.js"></script>
 </body>
 </html>

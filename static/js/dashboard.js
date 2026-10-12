@@ -43,13 +43,38 @@ document.getElementById('triggerSearchBtn2')?.addEventListener('click', openSear
 document.getElementById('triggerSearchBtn3')?.addEventListener('click', openSearchModal);
 
 const careerPilotButton = document.getElementById('runCareerPilotBtn');
+const journey = window.CareerPilotJourney;
+const journeyRoot = document.getElementById('careerPilotJourney');
+const careerPilotResultsPanel = document.getElementById('careerPilotResults');
+if (careerPilotResultsPanel?.classList.contains('hidden') && journey?.getState().draftReady) {
+  // Drafts are intentionally not persisted in the browser; after reload, offer a fresh run.
+  journey.setState({ draftReady: false });
+}
+
+document.getElementById('careerPilotJourneyAction')?.addEventListener('click', () => {
+  const step = Number(journeyRoot?.dataset.currentStep || 0);
+  if (step <= 2) {
+    window.location.href = '/profile#careerPilotJourney';
+  } else if (step === 3) {
+    const searchButton = document.getElementById('triggerSearchBtn')
+      || document.getElementById('triggerSearchBtn2')
+      || document.getElementById('triggerSearchBtn3');
+    searchButton?.click();
+  } else if (step === 4) {
+    careerPilotButton?.click();
+  } else {
+    document.getElementById('careerPilotResults')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+});
+
 careerPilotButton?.addEventListener('click', async () => {
   const status = document.getElementById('careerPilotStatus');
-  const results = document.getElementById('careerPilotResults');
+  const results = careerPilotResultsPanel;
   const metricsPanel = document.getElementById('careerPilotMetrics');
   const activityPanel = document.getElementById('careerPilotActivity');
   careerPilotButton.disabled = true;
   status.textContent = 'Running job discovery, matching, and draft preparation on the configured vLLM endpoint…';
+  journey?.setStatus('I’m coordinating the Collector, Scorekeeper, and AI coach. This request returns when the run finishes, so detailed activity will appear here afterward.', 'talk');
   results.replaceChildren();
   results.classList.add('hidden');
   metricsPanel.replaceChildren(); metricsPanel.classList.add('hidden');
@@ -61,6 +86,11 @@ careerPilotButton?.addEventListener('click', async () => {
     if (!response.ok || !data.ok) throw new Error(data.error || 'CareerPilot run failed.');
 
     status.textContent = 'CareerPilot finished. Drafts require your review; nothing was submitted.';
+    const draftReady = Boolean(data.application_package);
+    journey?.setState({ matchesReady: true, draftReady });
+    journey?.setStatus(draftReady
+      ? 'The draft is ready. Check the evidence and unknowns below, then decide what to use. Nothing has been submitted.'
+      : 'Matching finished, but no application draft was returned. Review the matches below and try CareerPilot again if you want a draft. Nothing has been submitted.', draftReady ? 'celebrate' : 'surprise');
     const summary = document.createElement('p');
     summary.textContent = data.answer?.summary || 'Match analysis complete.';
     results.appendChild(summary);
@@ -96,6 +126,16 @@ careerPilotButton?.addEventListener('click', async () => {
       const heading = document.createElement('h3');
       heading.textContent = 'Application package — human review required';
       card.appendChild(heading);
+      const packageJob = (data.matches || []).find(job => String(job._row_id) === String(data.application_package.job_id));
+      const postingUrl = safeHttpUrl(packageJob?.['Job URL']);
+      if (postingUrl) {
+        const link = document.createElement('a');
+        link.href = postingUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Open original posting to apply yourself';
+        card.appendChild(link);
+      }
       for (const [label, value] of [['Tailored resume draft', data.application_package.resume_draft], ['Cover note draft', data.application_package.cover_note_draft]]) {
         const disclosure = document.createElement('details');
         const summary = document.createElement('summary'); summary.textContent = label;
@@ -141,11 +181,21 @@ careerPilotButton?.addEventListener('click', async () => {
     activityPanel.classList.remove('hidden');
   } catch (error) {
     status.textContent = error.message || 'CareerPilot run failed.';
+    journey?.setStatus('I couldn’t finish this run. Check the message above; if the profile is not verified yet, review it on the Profile page first.', 'surprise');
     activityPanel.classList.add('hidden');
   } finally {
     careerPilotButton.disabled = false;
   }
 });
+
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(value, window.location.origin);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+}
 
 function closeModal() {
   modal.classList.add('hidden');

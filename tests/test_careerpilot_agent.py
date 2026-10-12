@@ -1,8 +1,10 @@
 import json
 import os
 import unittest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+from careerpilot import agent as agent_module
 from careerpilot.agent import _verified_profile_facts, create_careerpilot_agent
 
 
@@ -104,6 +106,81 @@ class CareerPilotToolTests(unittest.TestCase):
         })
         self.assertEqual(facts["skills"], ["Python"])
         self.assertNotIn("unrelated_secret", facts)
+
+
+class RunCareerPilotFallbackTests(unittest.IsolatedAsyncioTestCase):
+    """Regression test for the live finding: Qwen3-4B sometimes finalizes its
+    answer without calling prepare_application_package. run_careerpilot must
+    still produce a reviewable package deterministically in that case."""
+
+    async def test_fallback_generates_package_when_model_skips_the_tool(self):
+        context = {
+            "jobs": {
+                "job-1": {
+                    "row": {"_row_id": "job-1", "Match Score": "88", "Why It Fits": "Strong overlap"},
+                    "job": {
+                        "id": "job-1", "title": "Security Engineer", "company": "Example Co",
+                        "description": "Python required.",
+                    },
+                    "breakdown": {"skills_match": 100.0},
+                },
+            },
+            "profile": {"skills": ["Python"], "base_resume": "Python engineer"},
+            "package": None,
+        }
+
+        class StubResult:
+            structured_output = SimpleNamespace(model_dump=lambda mode="json": {"summary": "ok", "assessments": []})
+            stop_reason = "end_turn"
+            metrics = SimpleNamespace(get_summary=lambda: {})
+
+        class StubAgent:
+            async def invoke_async(self, _prompt):
+                # Simulates the model producing a final answer without ever
+                # calling prepare_application_package — context["package"]
+                # stays None, exactly as observed against the live endpoint.
+                return StubResult()
+
+        async def search():
+            return []
+
+        with patch.object(agent_module, "create_careerpilot_agent", return_value=(StubAgent(), context)), \
+             patch("ai.resume_tailor.ResumeTailor.tailor", new=AsyncMock(return_value="resume draft")), \
+             patch("ai.cover_note.CoverNoteGenerator.generate", new=AsyncMock(return_value="cover draft")):
+            result = await agent_module.run_careerpilot(search, lambda: {"profile_verified": True})
+
+        package = result["application_package"]
+        self.assertIsNotNone(package)
+        self.assertEqual(package["job_id"], "job-1")
+        self.assertEqual(package["resume_draft"], "resume draft")
+        self.assertEqual(package["cover_note_draft"], "cover draft")
+        self.assertTrue(package["requires_human_review"])
+
+    async def test_fallback_is_a_noop_when_the_model_already_produced_a_package(self):
+        existing_package = {"job_id": "job-1", "resume_draft": "already here"}
+        context = {
+            "jobs": {"job-1": {"row": {"Match Score": "88"}, "job": {}, "breakdown": {}}},
+            "profile": {},
+            "package": existing_package,
+        }
+
+        class StubResult:
+            structured_output = SimpleNamespace(model_dump=lambda mode="json": {"summary": "ok", "assessments": []})
+            stop_reason = "end_turn"
+            metrics = SimpleNamespace(get_summary=lambda: {})
+
+        class StubAgent:
+            async def invoke_async(self, _prompt):
+                return StubResult()
+
+        async def search():
+            return []
+
+        with patch.object(agent_module, "create_careerpilot_agent", return_value=(StubAgent(), context)), \
+             patch("ai.resume_tailor.ResumeTailor.tailor", new=AsyncMock(side_effect=AssertionError("should not run"))):
+            result = await agent_module.run_careerpilot(search, lambda: {"profile_verified": True})
+
+        self.assertIs(result["application_package"], existing_package)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,383 @@
+profile_verified: false
+name: ''
+experience_years: 0
+role_type: IC
+target_titles: []
+skills: []
+location:
+  preferred:
+  - Remote
+  hard_no: []
+salary:
+  minimum: 0
+  target: 0
+industries:
+  preferred: []
+  avoid: []
+scoring_weights:
+  title_match: 0.3
+  skills_match: 0.25
+  salary_match: 0.2
+  location_match: 0.15
+  industry_match: 0.1
+minimum_score: 65
+base_resume: "\n\nPK\x03\x04\x14\0\x06\0\b\0\0\0!\0$L}\x01\0\0)\x06\0\0\x13\0\b\x02\
+  [Content_Types].xml \x04\x02(\0\x02\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0j0\x10EѶJ(ɢe\eh\n*8\x11\viw$\x14'.M13ޣ\x01p6:YBٌ\r>KJ+;wϒB;\v\x19\
+  @dp\x10\x13Rۘ\x05\x7F<\x05\x18\x11SRp\bcs/䗘\x03t\x16b\x0F+\x0F6\x1A>A!J~oI\x02Ȓmc1VR\
+  \ RzuO\\(\x1Foքr8`{\x04C2\x11\x01_.r!繓!ezܦ\x15+7\x1F\x18iFM\bem\x1Ç\\!Ip>\x0ENiL+?\b\
+  Y \x10XwBDh'v\x03\"\t.\x01sDXb\x14?;A\nʝc4֝\x10H\b_Ems,:\aH-U{O/I$\aZ!o\x1F}\x03\
+  \0\0\x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0\x1E\x1A\0\0\0N\x02\0\0\v\0\b\x02_rels/.rels\
+  \ \x04\x02(\0\x02\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  j0\f@ѽQ\x18N/c\x18\a\b[IL\x13j<\x02]aGӓzsFu]\x1AU\r\t^[x\01xp\ff#I)ʃY\x15\x1A\x06\
+  \x13*D\vi\")c$qU~31jH[{\a=E\x1D\x19~\nf?3-޲]Tꓸ2j),\x1Al0/%b\n\x1Azŉ,\t\t/|f\\\x12\
+  Z\x19?6!Y_o\e]A\x01\0\0\x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0\x1Az\x0F\0\0\nM\0\
+  \0\x11\0\0\0word/document.xml\\[s\x15~LÎ\x1E\x1AgL\x1775v\nX\x17Fo+pIl[\x05%fҟ_sv\
+  \ HQ1Ȏ\x1D3\x16A``q9{﾿\r|bIʣQqDXFs\x1E._\x1E^H*h8~\x14Gk\x1E}\x7Fd\x1EYBAD#O^O]\x05\
+  4=\x0EDi\x10n\x14ԣł~\x13%zlȣ8\\p?+\x1Ej\tHЬ\x1EM\x04h\x1EL]{w\t\x1E@\bռK8TC|\x10\
+  !X\x1DJQpQjݥ}\x18%.(QஂG1\v\"J\x02*k\a4\x17@8_q5lt4\x19\a\bf\x15\x14\x02c~0n=7J(K\x93\
+  |b>.D?\x19̯v[]n\n=7;5};\x16ɵz|c\x14\x1E\v\x10<\x1A\\4կ1`\x15zMܬhj\x12Æ`\v|_lT&(fTY=J\x02\
+  ͍\x1FĚ\x12s\x15&кC㲊B4ƺ\x0EhV\n\e6+Ŕ\b̳H\f\x0E%Z\\̽i\x19q.\x15ԣia4⢢#\x14\x12E`~\x16\
+  \fiØ.\b\fo3I\ejQ\eo\\\r\x03h\x06_vBo[ԣ1x=\x19/(W>\b̗\x05\x12)\x01\v\x1F?ǃyF%\x1E\
+  \x02\x10x\x15\x19\x05$\t\x1D\ruN1\a\x10,Pg?8{\x02s~\bͩ![\x17xEw'\t~1uI`,]\b\x06\x11\
+  l\x1C.[QPJ\x17<=Kl+9ލ(S]\x1E*B/ɉ\x13ūsL3<9ө-Χ\x19\x11j]vp\x0E;,oY}\asL\x10Q\x17\x19\
+  RH\x7Fyyԓ\a7\x10v\x13壗\x1F\x1A\x13FjJC2JhԍjĶ\b7!\x02\x1E0e~%D\b\x1FuR^\x010H(.PC7s%\x17\
+  ^vu#y%\x13g8Ȓ*p\x1Cfi\x19U8JQF_18\x05Uys*4B'\x17#ŹuJά\x7FTj\x1E\x18V\e\x17\\!\x13\
+  -z߯u\x12@\x04PJ ̙`.~%\vy)C!c\x13P\x1Eev\v\x139䶌$l\x19'B3ၦsWR$l\x05_\x1A\t\0yMDBѧHN\x05\
+  \v\x1F-*ޖ,\x01D\x06\x19d-<W\x06\x10+\"?x\b\x1DK_\x1C#Lc?\v$\v\x10qYJ\x16\x15Xb\x1E\
+  =OX\nu\a4V\aY\x12i\x05;&\x1AhM\x02\x1E1\x05v+\x16\x01\x10\x1Et}F\x13\x7F\r<K\n~!<f\x02\
+  d̋9\\>&64E,\x13\x17\x17\x1Cs_3\x19'gc|J{}\x05\\\x18'\x1F\x01x\x1A\n\x13\x1C\aPN\x02\
+  \x10$A\x14r\x01WPjZ\0@\x7F\x05O˗R|\x154izΨ/\vťC싳3s3Ҏ\x1El\x03\x1F9\ey(p4c\x0FƯm뗕\t\
+  bAN#5nU\\i5]OSsB}p\x05z\v5\x14.[\tE1i6jd!?UT 4M!(W fnP1\r\v7y\t\x02Qq3fk6\v\ro\t\
+  8\x18Z#B0R\x06\x05\x16&5rE\x01fS\x04ï\x04\x0F*J\r(\0^\x12(Kү-2'Z_\x15\x06VBmMx,dMNik@*dd\x04\
+  F~+h\b@\x19&c`$JE@a舦\x02Nk.TMvUF\x02@\v\x10+\x1F\x19<~~F\x02 ̞Ǔ\x1A\x19Okl6\x1F\
+  8\nv\x11F\x15Z\x03}J\x1D\f\x11DZۏ}\x02Y9X{`'k\03<\x10\x19\x18hoC~\rk\08)\"\v\x14\
+  \r\n6{V4{ï\x19Ĺ\x1C\x03q*0mؐPЫ4ԫN\x138;RdK\x1FC\x0F˼\aUVfNlqr|B\vw[\x02\x13\x0F\
+  M5\x04,\x049A\x06i>\x17IūVA\\?;WB0fc!K>\x14r2K)i\x1E\n\x17?}K\x01퓤xwt\nF O\x16&E+P$A@~aLN̯V\x04\
+  \x1A\x0E\x14ڑX\x14G3fG7q\x05\x18p[OL$Se\x02(NŐ\x02K\x14\x1Ci0\b3f!ѡl$\x01$rO;e\0\
+  L\x12e &\x1CIr)\x13Y,Gh\x12\x19\x1DR\x7FAV\0\x10U\x11ka\x138Jxv*J*#\x11%K\x1A_t\x05\
+  \x04n\0\x04$B<\az6& cҠ\v\x14hLRXe\x16IBh\x05\x02UQ\"m@6|l;JLĊc_':Ґ1\x16C?K@x\n.}@X!\t\
+  6\n\x15\U000B8094Z ΰ5xb4.oWRi}\x16\x1C芃apQ*Z\x15\x16>d\fl\tb\x15^4 $D%\0el궪\x15\
+  Y}1\x1F;܅\x0FB҂\x15UHd\x1D_\x14OwW\x12!\f\x04kEz\x04C\x16v8˕J\x01\x1EtO\n?/9\x01\
+  K}ib|FjC\0ÈU\x11D63V\x01p*\x052\x1FNJQ\x13\x1E\x15%σXʥNg\aS\x18j$\vC\x14*\x06GY\x02\
+  \"RM\"<H\x10l\x10\x13,=C\\GP9\"\e`\x12L\tIx<vwG\x11j\t8\f*.+\f\x18\x12Ҕcvb+(b@J\x18\
+  Up\x02e\x11\08\x03:@<Z*>n8̮=zbV2t\x19F\r\x15&bB\05.PqX\x02R\x10&Kc\x01Y\n4H\x10\
+  g\x14p\\xY-Ү\r\x1A޿2\fHz\a\a!\vO\x04\x0F!uӴ\x1DE\x1A+\x1E\x01p\x1Cq,\x1Aqu,\"\0\x19\
+  V)pL\x14{d;i3U\x05\\|\x14,\x01Bk7\x06u<\x11\x0EVX۶\x1AVUFp3\v(\x12tw6\rT}\\G\x17\
+  $*u\x12\x0F֣\x14\x03\v\x0F>I]/\x14\x14\\ȶ\x19Td\x18\b+\x05i6:إ!XBpT\x1CHn5ءAj茈}q^Ӏ\f\
+  W8ƲSb$Ҁ\f!qʖUcUmvZNMg9FfX[\aC\x02pTHI#\x7FUM\x16\x1FeE@X5@}7hjp.Q\x1D\x1CJR\0T9\e\
+  8\x04ⰝS\x05d/\x10H x_\x18dlқ>x5'+1Wy+u/Ȧ\x06l\n}(Rj<QPG>\x02k*Ȋ=gﹽ~[#=\x1D靮\a8'AU}͖a4\x06\
+  On'JITU\t!t>\x14xN\x02\x16`]'t*A\x01ʣ͎\tR\x03\x1Cj\x0E\x11\x18b\"$+A\rx*\x16cj\x1C\
+  \n\x7F]ŚA\x1ALx` \x01R\x13\x04vyGA\x01\vfTy\ey\x04+7l~:\x1Fa:\x19c9\x1F)\\^\0tbFfi\x1A\
+  p_xx\x03nLe$\x7F*hN {D\x13u6iZRO\x7F<!Xy\x02!$0[k;NxjUP\x17\x10/<\x14.Z\\z;\x03\
+  ҝc\x03\x04\x01\r2|\x13wR}գK\x040uUq\nNVqcX'\vfc۴\x03]=)`}8ۣ\0#<\x05pQE*#4;OU%7<穇\r\
+  \x10UQV\x12VU\x1E.PuPN\x17Lm\"\x1A׈3pW\b1 Sи$[s\x05V\x10w:ww\x06vwUA\x16ٲ{\x1E|\f\
+  l|q^`\x06N\x7F4>|l7&_Eڪ8T!׾Pww\e\x17`$Z\x1D\x10dK\x03}\x13*Ȩmنt\0AQ\x14\x19+;\x1D\
+  eam[ylƙ\x12Ej\x10V\x03$oU\x19j4ڃa~,ᕗw;d4&%o\x10)O\x01\x06\rzbUXhkZ\x1F\x1E?@-s|1l\x0F\
+  3x\x12ģB,mc?\x1Fh\fJCr6\x1EU6a\x1FUy\x1DΫ;oDt\x1C%|Qk\x132)\a7|{D+\0\x05Il[\b\\\
+  SU\"-@j\x10~0\\LPBp\bcfGqg9E`e*x\n\x11xyFbL]rҠA&-9^ihqQ81:Gʿ.HZu\t5W\x17\nci\x13\
+  \x01\x13L\x16'\\\x1E4PlE}#f\x0F\0\0\x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0\b\e\x01\
+  \0\0D\x04\0\0\x1C\0\b\x01word/_rels/document.xml.rels \x04\x01(\0\x01\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0N0\x10Hw@AN/\bW\b\x12W7؎\rǢj*\x1Dkg>{j\x17Z\x18- b`sS4\x12<\x02\
+  s$u![Q\x0E\x15[IMwN@M=q\x1AtPX%ɗ?e|\x15kn\x1Ex]![`%ަ,\x1CM+t&;\x1AZ\x7F\x01I[!\t\
+  8ԑ\x01~>!d<^ʃ,1B2^N\x1C\x04{GF}\x11\"&7jI!iJ)v6QZ\x0F\t7$Sϙ\x04r\x17tGQ\x1C#\x02\
+  ?\x17\0\0\x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0!Zb\x06\0\0\x1D\0\0\x15\0\0\0word/theme/theme1.xmlYKo\x13\
+  G\x1CWw\x18\x1D\x1D\b\aŎ\rm\bD8\x1D\x0EY͌VRHPE\x02\x17iRT+?3=&\x06Z|\x1F3|$f\bIyj\x17\
+  \x1E\"\x03-VwaCR$'卉l~e\"\x12\x13\x04-/R*ݨT\x0FX^)I`oE\x15LEX\t\x04>\x061ԫJi\x04\
+  pH}9ae(\x17|&\x0E4kR0ద\x7FXv@G<\x13>9Q\x1EbX*hyU*+9\x11S\vh\vt=2nD8\tk휿\x0105vn-g\0\
+  RK\x11\x13\x05\x1DTF\x19_2_o\x12ހ1_6%\x01as^VZ\e\x1D{W\ee\x01E&sh\x1D<29d5'|\rk\x04\
+  *Zk1E\x0F\0&X\x04qJ\a\\\a3:\x10T\v\e\x04\x17v/疴,$}AS>N1T\x14/>F{?;$,R=\x1F~z\a_~K7P\x15\
+  Ͼ~ǓGϾ\x1F\x1E8[\x02\x0F>D711\x18\x10@\x06(\x11E$8Ɓ1\f;pmRm\x01-\x05:[R \x12#Ż\x04\
+  ܉\x12psiӎU(\tŨ%3\x13(\\.c\x10r\x1C(!!\x0E;K}%\x1F*t6N頔MSk4]\nBKٽڜo2\x12\x023\x17\
+  KJnG\nNq̊XE.%\x0F/9\\*tH\x18G݀H颹)%uwuþq\x19)\x14=t!c΋m~؉p:uIT~$\x0F!E1ʩ\x04/WC\x1C\
+  p0ܷ))ھEÒJ\x04;#*\t8fCL\fLi\x1DC\f?\rٷ\x0Fݝl[\x04W6E\"~wƣd@A8o΋[\v+m\voC؁\x1A3r]-\a\
+  fbK~\x1A0\x13W\N\x021\x12\\}BUt\x10\x14ԌPfCR.,;y\r8?]kN\x1E*\x01.\x0FJa3gcfy\bZ\f\
+  \x15r̈́,pIi5ڼd4y\x13\x06a*Z!Q0#e0\t[\fQf5$\x01q,\x17\x19w7r\x12\tuT\x13K3t֛|!ܖ`\x18\
+  ONY<_Y\x03Ϯ\x19YUN\f.HTXFleD,_o6\x1F\0G3YNڿ)\fW\vVl\x14\x11\aQp\x06l$1ݰ\x15P\t䚞\b\
+  m\x03rf1&\x19\bgٮ_L,p3u0zlF4EWyRL):s~\x12\x0FHhBE\x1CP\x1AQ'7@/\x04eUBLֺi߲<LAC\x10\
+  \t\nNE=y\x06Z\x15\x18e}&WWw@\b]{(t\x11\x067\e<s ԅ^\\lڼ3\x15d\x15Vh`TX\0.\x1DkN\\\
+  =jSx@\v\x1A7\x15>^O|\x1Fs\x1EA\"^]Mga8\0YY\to\x16˝qv8%j/\x17F%_\x17|V\n!f6G\x14\x1F\
+  \x05x3bvE0=a\f\x1E`\r-:bYO\x06'x4'?\0m{Nr6a8۝r9\f-;'6Oq.\x06l*m\x16{%o%w̙˺l@]yJ<r\x04\
+  LLn\x03\0\0\x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0\x13\x04\0\0U\r\0\0\x11\0\0\0\
+  word/settings.xmlWs6\x10~L\a%\x189\x06L%2%7}m\x01j$K#\x10+Boµ\x12v?VCy\x0EKEx9+2\x05\
+  )7SӲ?zJ@x\x1D>wDaAMT\t˧Vk\f\x06*b\x15\x17\x04p%C\x1A>f|D?L M2B>\fBߏOJICg$\\6&\t\
+  _I\x1Fg!߲omyp\x03)K%B96l\0n\x1D[1,\x16oq\x18\bs\x14\\\x10AR\eG{_\x11-\x15\a]u=\x1F\
+  ]F\x10\"sr\x19Ǥ\x18e\x14G\x1E\x066ϙ\x0EAQ]D\x11\x0E\x1FǘwTet\x06\x16iEꘑ5^\x18u\x18\
+  \x04<\x7Fr˂6:\x12\x1EX{[gI&{F,On7%(\x0Ev\x0Fg3\x7F͏]\x17+7m\x16kj\x16\x10ҾpzD`C]C?|o`\0\
+  &^i1Q\x02Sj\edN1\x02\aF\"\x06IMר\te+\x05(\x10s\x1C6\x16Ik,W\x02RKN^\x7F:6)\e\v4ͪRxys\x0E\
+  \x1DdU7d`(\x11H4\a^`i%ۯ\x18Xo\eq\x18 \x14J\x1F(^aV\v]4\x01Fj\ar\0fO3O\a\x18\n67D<\x10\
+  )-\vȕ\x1F\x19\x1F\f3|tys9x\x10[8\x10A7\x15P(sT}\x7F\x1E&s\r\"0,\x120=,Ʃ\x7F\x16\t\
+  F8E\x1C\x12^9d\x18^Q<Iϲfbrc8nJ\x14YpD/K[Q)\x1E-R2IP&\x06F#sR:<\x12q\x17YU\x03\x1A\
+  P\fQtqu%\x05QbvM\x1Fܴ<+Nvw2\x11_%D%\x12u\x118 &KH\tsrUe+gUB\x13@UY|I\e6<DC2frlQX]\\\
+  ?L\x1AcL\x114DǦ\\\x1A\x0FHM0(lu`4|\x15\x0E\x1F&lba\x0FÂvheuN6leEldV\x16;Yld[hb\x12\
+  &3T[\x1ASD1=jVi&#mO\"\x17x|䵠WK\v\f?\\\x10\r\x7FA\n\x16Fsk0,N\x19Su\x13c[\x13_bfN\
+  \ \x7FW\a>\x16%\n:t/\x16\v\"8t~kF}TˇP7.K\x03כ2\vAN\x14kёbT#\x7Fgl\x1C,>t\x1FD|/d\x14\
+  \\t1n\x7F\0\0\0\x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0\x06\0\0\0\x04\x01\0\0\x13\
+  \0(\0customXml/item1.xml $\0( \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0A\n0\x14DRަ\x10)M D(M6$\x15{{#^a\x1E\x1C\x16/\fѐ-+(k\x1F9<\x01%\x1C\
+  Vpl\eU\vZX住04׌E=\x19}\x06\nN\x1Ch\x18\x13šOlWU{ i?*\x16u^߬uS\\r\x05W2\fX\x01\0\0\
+  \x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0Z\al\0\0\0U\x01\0\0\x18\0(\0customXml/itemProps1.xml\
+  \ $\0( \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0j0\x10\
+  =\e]q^K\v{ƨ\x01$woa]Z0Hv1D\b\x19\x19vynz>\f\f©z|({wΣ\x17/u\x14\x1A*KҼ(#u?8oHޥ=?';(M8\x18\
+  L/GJn4a8\a#aPB6(V-i\x1CgTAzj\"\aw[ժZn6+\x1C-_OUI6{E\x03\0\0\x03\0PK\x03\x04\x14\0\
+  \x06\0\b\0\0\0!\0vu;\x04\0\08\x1D\0\0\x12\0\0\0word/numbering.xml̘n8\x14Ww\x05\r\
+  v6ɪjv\x1E\x01A\x01\x194RX\nk\e%0\x04\x06\x7F||>&_\x12< Z$YzkC4$}Ѿ?-|mR0\x10g)vо˗md(8ጴ\b\
+  yt\x19C]/5\"&ID\"[(#zZ%\x11ҷ\x19u\0|i\x16{n`ո\x1F-p\a\vGkH\x19z=0\x10G\x0Ft\t2\a\
+  \nMDYg\\]X\0ك@ܪ\x06\x19F:8w\x18la$I\x1Aۉ47x72J Y'\x15\a%\x04'lǙ00I_\x06XG\tĊ&x:bXQ\e\
+  iXڏ\x17؏@ߴ|@G\f\x17L}|W\reQIPʤt0c\x16$g\a2\e\nr`o֖f\f\a`\x1Fk\b,&\x02\x02\x1FǄs*K\b\
+  \aȹgQ\0\x01p#P\ff!\x05'\x19VS\"8g\x0E|o\x11 .BC\x14b\x11Y>\x0F4X\x1A\x16@\x11#bp\x16\
+  `;ra<.P\x7FY\x1Fh8!eo\fV\x1DI\x18g\x1A<(|xN3\n[w#p\"\x15\x10F\x16|D^aC\\NDJn-\x10\
+  .\vFa,\x03\x0F%~\"~0NW\f;\"(i!\r7o5]\x12\e ˑ#փ1cxo\x01c~oU\vވ\x17j2i\f^2 \x18E\t\
+  5|Gj\r\\T-F+VU\x7FQi\x10wE]>|\x0E0ϸ7\f_?LR\x02\x01\x1A*nrzY\x1Ez\x11z\x061\r?)Sa۝zac>X\x1D\
+  0^H~oIQ/H\fS.|y\x11r-\x06e\r\\RM\x03ryfZbk/\x0E\x10\vx`zoMGe1N\x1F\x7FmHb\x10/_\x1E\
+  wda9t}\"I؆+=Z$e\bm}>$oZb6/&cml=6/$\x19wGH_vH\x0Eb1PXI\x7F:\x05_FQ)3\b\x10\x1F,̘]0?=)eރ\x17\
+  \x1D\x0F\x1FU0X+3\\ \x18\x1D%\x7F\x14;=\x14?\x19q)\x7FP\x0F\x02+fkUˀ%\x01\x1FE\r\
+  c\vj\x1DPyu\x7F\x0F]G|\ty\x1D:\x1DLyl\x18j\x19\aڡ\x18iʫM\x03\x1Ax\x118FK\x0E<4Ct\t\
+  v<0[2\x1Fg\x06hV\aTg\vT&\x01<\t\x04v\f\x16hpڥ\x0E\a\x0EU%UY%\x7F\x01\0\0\x03\0PK\x03\
+  \x04\x14\0\x06\0\b\0\0\0!\0yV6\0\0uC\x05\0\x0F\0\0\0word/styles.xml}[6POg\x1F<ű=\e\
+  ӎ=̳JbuqZ%ՑTnۿ\0H pWQb\x02\x04\x12߿\x1C\x1F~s.W|n\a?\x1Fӗ\x0F~l\x7FxpN|r>ùo_o\x7F\
+  \x1CGteꜼ\x0FΗuws\x1Fݣ{h0\v\\Tܽ=^Ӎ\x1C=}FԾPv\x1C^/sz\x0Fr\fSLf8\bz~{pFwp~{9&\x04\
+  z\x04F\x1C]\"޻3M=љtC\x0El2)\x027-\x12q4\x0F\x1F\x14vx#\x17\x7F{]\x14z\x14')\x1D\
+  i\x1EӦ1?^|\x19|=\x1E=JV>x\b~u~g}<\x1D_<3yuvo%3cO÷w׽~\rz\x7F\\;\x13gw.\x15^?\x7F\
+  (s\x7F.݃?Ov\x1EGƟDqw\x12]sN)=ԥGwwVg\vM=k/6nqvO7sL_\x1E]\x0F\x7Fؽ @oL=t_ySDO\x1F\
+  =uq\x0En\a\x1Fޱ=_<Gr\x19^伸\x1F9xzv\x0FοӯW\\_bxa\x7F~;yI\\\x0F{wާ/\edpv\rCI\x7Fvv~x\x18\
+  Ik\x18w\\SO+{v-u\r4ki]\x031Ccy]\x03-\x1Ar tB\x01>?\fG\x1AHMĖHLE\x12H\x14]DHTiaJ\x12\
+  m/[\x1E#`tC\x02ny\x04-w0\x1DFܝ{o\x18rgO7H\x1E~t3v:ߜ9ɣ@5\x0E=?9\x17D \x13x0\x10\e\
+  S\x1A\x8C\x14\x1Eo>{8?=<_.x7x~u\x1EvG\x0FŹ]$\x1Cyr.i`*6\x1EQ\x1F\t>^\x1E\x11tu\x05\
+  s: /\x14bo$.R;4{5Oav<:H~Q1F\x1C\e02Ѐ1G\x0690H\fE!5$NԐ\x18\x16RC[X|\v!-ķ9>#sc^\x1C\
+  k\x10y|rv^\x02`\x1En\x9A/e\x17dϬ;|3FL)aLE6S7sfa\x19WL\x0FɼbzH\x06\x16374O>Oo72JJFiw|\v\
+  \x12Zsk5,1\0۽\\@L\x16A\x7FY_\x18/\x12ZfJ\vI\"\x7Fg?\\<X՘}>\x1Eߜ\x03\x1EO9еɏHLzy}]]2$C}ݫ\x03\
+  rܹ'\x1CY߽\x03^\x06O?>|>0g\f\x0Ev;\f+_\x7FLp\x1FHOB*\x0F1b\e\x17!\x04\a$J^\\\x18\
+  yw9P\x04KJn\x0E\x12O @-/~\x0FB6swq\x10Q}F!*\e^\x1E]\anR]v7\x1E94!C<E`\x83\b\x0F\
+  !g\x19rX\x0F9WW\n\x15L\x0Fq#zk\x0EBzvc`D\x10\x11A4\x16o/+\x133z\x0Fa?/0z\b%9Fo\x17\
+  &\fF\fK\x12\x18\x18\x181,\x190b\x020_\"fL'E|N@\f)\x05H\x113'E\fK\x181,=cİ\x11ҳyz`\x10\
+  \"s)xts^^ϗ\x0F$C(\x06~,S\e_>\"&\x019,!yDO\vs^\b\x15x>#֒L\x15\x0EN\x0E)r\\$$˟m\x19\
+  i(=\x7Ft<\x1E>=4٠\bgn+\x1FPYEtO}{&oof\x1AyR~sId*ɏ9+3ɒ3w\x15\\(4sg=lwBE\x17O$7/ҢfE\x14\
+  )Ry\x16eLao\vxٌ~5߯cEr*:$lWr\x12E\x06\x0F7׏:N\x17\x0F7fI߷sPϼpR8΃XUn$\x03PD۵\\oPvRr\x12\
+  ފ\bzފ_[C\x15O\x05\f\09\tt@NBPy\x12چj)Ih\x19*w;Py*چʓ6T\t\x19*\x7F?Py*\x10Ch\e*OBPy\x12\
+  چʓ6T\x02s{ Ch\e*OBPy\x12چE\x03C3T~T S6T$\r'm<\tmCIh\x19*w;Py*چʓ6T\x06[\r߯g\x10C@\f\
+  m<\tmCIh\e*OBPy\x12چʓ2TvT\r'm<\tmCe/\v\r\f_P!S\x18*OEPy\x12چʓ6T$\r'e Ch\e*OBPy\x12\
+  E\x19-\x1FW=+_]Gz+wXT4+9-\bp\r5\"=\x12z.[\x12\x1D>iM\x05L4nRd\x7F\e\x0F1\x16_Y8B(\f\
+  \x1FH\x13\x1FIKMё'E\x1E5EA^Z\x149Դ\x18\x14)%/X9)m\tIDU\x03ES\x155OAW<\x0592pQIDՓES\x15\
+  5OAW<\x0592pQID͇2]Q\x14tES\x15a@'\x05\x165O\n&j\x0Ej+jy\n QsdIE͓CEڢ)芚+j\x02H\x1C\
+  \x19yR`QDPsFZ\x12Nݮn\vȩ\esF\0ZJ\rDK)\n@*\x1EZJ\vMNAUzr\nbSВ`头%,'\x05\x13\x1EZ\x12\
+  \x1Anr\nCKRQ롥BQ롥BQ%ВHzhI$jsS\0Z\x0F-\x15Z\x0F-\x15Z\x0F-EDCK\"Q%\r\x03\f\\zhPzhI.j=$\x12\
+  \x1EZ\x12Z\x0F-DCKCKCKrQ%ВHzhI$j=$\x15\x1EZ*\x14\x1EZ*\x14\x1EZɻEhew=\a>v~=]sx}\x1F\
+  qG>mvz3uj{!\x19\x12d_\x10\x1FK!<\0*&\x1Cc_\x1E\x0E3\x18؛rl\aߒ\x1D>i\x12!>IrLևw\e\
+  lMΣ/\U000F08BFT\x0Fb]©7!ǝ,&6\x13}ar;}\x04}}GlwҢDK\x14_\x1Dgo|vS/\x1Ap(ң\x02]gA_\x1F\
+  \x7F;\x15D\x14GwIfғ2w&'If7S}/\x15r<KV<\rc+/ȮCNNF\v}d4vP{FR\t](\x14'E*V(`7BEޫ\n5\x17\
+  VPy\tSk3O\x06G}\x1DR\x1Ff7W\x1FCŘH\x15#\\ۇ\x18\x13\x05HҕV\t36\e\tJ&\\Ή5j\rvhMF3F=cB~3g1ԕ0S\x0E\
+  GWf\x15f3Е\x02R̥\x13ep4g]͉Rvkd5?*ћϮ\x7Fq\0\ff!U\x10͢j\x133\x16Rx\x19\x14\x15\x19\
+  Lg)՟P8D\x05r;Xʵۇ\r%स\x0F;6)vӕ$*\x13\x19H}\x05sfUBoP괲R\x1EJypu[X\x01\x0Efz}\x17>8OWWΓoާ\x01\
+  볙182Bzk\x12xLg\x04H\x17i]\x7F\"`7ہei:?\e=:++y\x1F\\\n=\\sl\f8tH&\x18޿\x10\x12X\e\
+  \nթ0\x11_Y(\x19)Z)'\vy>ࣇ39\n\x1DeQW-\x01E@jz</L\"\x14TMj9\a\x7FTP\\`V;C\x1Cvo\"\
+  6İl\x7F\x14\x10E2L3޻\x19\n8xE&\x13\bI[\x11pm4\x19s$-[\t\x05^<\"1oF(\x18\x19Vy]\x1F\
+  ؿ1`_O\r\x0FG/^r\x03>\x032Ÿq~ooc\x18Z\e[V\x19=O=?s[gf\x147L_K\x03\x14ϴ\x03\t9Dj9R*/WvI\\\
+  \x7F?G\x11B\x04IOo//_3\x13~\x1AB֐Ua-d\"\\ɐI&H #EzդNR\x16ۿ_aKZ\x16:'\x1F\x02^ZpZFj_,)~݇f'\x7F\
+  7>OQ*\eC)Vb\a\x0F\r*=\x12<)\x1DG2@/+M\x1F\x0Et\nRlQ\n<\n<',\e2k\0\x15i\x03J4}=D\e\
+  \x17VhqK\x17\x14\x15kxy@\v#B 3H\x1EBTp%\x1D6So]0?#[YPV\r}<y$)C-{\x12Ng\x1F\x0E\x10\
+  QïߎGG\x0Fg!/?_a 1ڭÅNP1+$V\x11n\x10\"Z^\x19+~f\x1EĜ\b?k\x03\x1FE\x15Ab\x1DZh9\e\
+  /qR̊(\x05\x15\x12\bYQu(\"Z9Y\x19+\x13l\e_td?\x17dOŪx\"ڭE-ilM̖-G-,\x1DCO,_\x04\x03\
+  qT|\x03\nP\x15pCg?kh:\x0FQ\vajCy:Dx\x10V\eX\bV>e1LKf:k\x1FK$g\x19\r@5+('W@\x15-YU\x0F\
+  \x14֗huIv\r/874ϴjQyM(\x15(dZ9=d`;\x01\x7FkK\rj<{ږ\x12i`Tf+qWт\t҂]J\x17VwaN5\x18\
+  lIq$-aX.LM\x05[me!.L6-jJ2*\x1CInݻ$VM1\x06[Qeb\\ 1\x18wLko)`kLK$yF\x12w\x18 mvU\x1F\
+  '}x]$N\x15$XX\x14B<\x1C1`FpMӎb~]΂]Fe=;\x11`\x02f\x16C\x0F\x16\x7F`hZK\x05P\x10j\f\
+  \twAt\x1D^ =\\Q\ra\\\x7F\x1Fm\x7FzC\\e\x1DE\x05tu9f=W\x16ௐh,5vDNfjb\x1A\x123\nY\x1D\
+  Fv&\x1E\x1DF)u \x034M\x10\x18?*\e:&\x13w<)FZ\v[Nq\x12}J`ʧ1OW\x1F4K`:H8\x13\ezns?՘aI)[v\x10\
+  \x1Fd+\e:֘R46\x02M>}\x13\"7\x05\x13tE<\x1A׀\x12b(hڇ(Ɖ\x129c\x165\tS+\x11]<OX\x13\
+  z%n6\x1DVnw>_\x0E%xc٤\x7F\\6ɈdD9H⻣69]\x0F\x1Ff\x13v,?u\x1DHlEF\x1AV\x11}\nhM:\x19\
+  L\x18(z\x17]\fBgVYt\x19'N7<oIzuZ%/,-\0HT]9P'ry\x1Cb*3\x7Fi\a\x12n:pD\x15y\x1F^W:W\
+  \ sy؝}%`\x7F^\"\x11D\x1DIʌ՛\x15\x13kqOICH=zsO\x12+\x11PX|\x1CG\x05ET |rG\x1Fr?mv1\e\
+  jkA\x15 \b}ZRcx{@Ccm2yNtS\x14Z;\0R3QxA\x03q*\x05=\n,G\v\ncQCD(U#o[۲b\a=\x1Fx\020\x05\
+  \x12K\x12@I-Oljg\x7Ft\x03);\f.%\x14HhRa,JHHR ejDxb|\x12b\x11>{)\x10*\fS \x1EdA\n\
+  $ފ\x14h>[\e\x03\x1AǗ;\x02-t){\x10.%\x14HhRa,JHHR eDem\x11>\t<N0\x19d\x02'i\vSpcyR=YWb\a\
+  \x14:\x02-\x06*Ɏs\x0F\x02vХd{\x02)\x1C-P*E)\x10I\x12R\nW\b\v)\x05\x17\x17a\f2L)P9ckr-v@I\x06\
+  څ@fv\x1E\x04K8\x05R`9ފ(\x05\"V\"YJ\x13G.j\x03OS L\x06\x19@3\x14h\x16N@x\x19H@_@\n\
+  dϗēF\x018R=N\x14X\x16(\x15Ƣ\x14$[d)\x05RFd\x1469\x05Bev\n$9/\\'PqӦDk_-\x12wl}Km_q\x1E\
+  w_.7݄\x04qYs\v?÷;L\x0E\x11O\x04~R3\x1Cr˭P%dV@y`I[\0v4UX\x04xFJ_o1\x1A:v-#Q\x041aV6A̱.\r\
+  \x0F\"U)Y\x15ۡRզ$;$ٙv\n\x11KA:nփ,\\Fz\x7Fnm4uFJc¬lc]vq\x0F:U)Y\x15ۡRզ$;$ٙ6\x14\x11\
+  ރ.w4uGJc¬lc]vwv\x0F:U)Y\x15ۡRզ$;$ٙ\x1D\x11޻fw\04ut\x17@Jc¬lc]vW{\x0F:U)Y\x15ۡRզ$;$ٙ'\x11\
+  \U000E41E9fW\x054ute@Jc¬Z,\0\"\x7FԑJɪ(u$G\x0Ex#\x0EGv&]L:uaٍ\x02h\x1D,R0+E!˺l\x17\
+  \x1F1u$R*J\x1DQCM\x1DIvHN\x1Dvq\x0FL|>\nؤ)F>{)R{\x02UTW(T[^v\\ٟw/\x7F/\x1FW\x1E\x0F\
+  |*\x17WWw\n?_\x14޹2F\rK\x10}\x7Fff{C|`zP\x0F6\x15Pk\x18\bvFeX\x02O\x1FM\x14(R۴eMgC\x13\
+  M7{L_\x13.iD\x17QklDzvzZ*i)\x7Fż`\x0F+`H*\x12LW\x06\x02AI\eMHZ\x11k\r\x15\x04.Gu1ú\x18\
+  {2\aQ0Σ&mY1lՖH7\x1AS-ֹgs-ѹ**i\x0EJ\x1Ar\x0F+iQ*LW\n\x11K\eMHZIk\r\x0ElK4J\x1A{2\a\
+  Q0FTHv^հx+n˗J\x1AFx:W]%t%:WE%MvD\x06?p\"b9\x1D8\x112\eh-\v\eXISi< K\eMHZIk\r\x0E\
+  <{*i4\n)d\x0ETI`DRI#iFUcfYiL9{6ZjK+i\e\x16\\u4ҹ\\\x154[J\x1A\x1EVh\x10\x05J2]M+yaw\f\
+  ^hBJZ[lȬtPQLTI3QH'sJ\x1A\x05#:J\x1ANSv4vۅņeGŦF(jUWI#kUQI\x1DG#a%NJS\n듦JWwu'O4-4!yؐac\n\
+  OJa%B=\x03U(\x18ѩI#FUcdlwpj[n4Zs\x15I#kUQIΞOga%\x0EU\n)մn&\x7F्&$ņJ\aU\x1EM4J\x1A\
+  {2\aQ0/km%d)oU\r{kMl(F9]Hkq%tQ<bF:\x12è\x1CܷOϻ7CsS;}Z6\x7F\x1E\e8\0=\x06\x1E=\n\
+  <=\bl%0,=\x06d!|\v6/|/\U000DB5CB\x04zeOJ_*\x04up;D:HRgH zM\"\x16w۸%!`-\tJl#4zpmMNgVUUh2<\x0F\
+  _grJ5|\x1Al$\r\x02\x03d\x14Hh\x03\b\x0Ea@)@kӌW\x15Gs'_+NI;\x04\x03{vM\x0Ee:\x12\n\
+  g\vˠ@tN\rA\x01\x05o빤Cgn4D@F\b8\x10\x01\x19\x06\x04\x05\a\"(@5N3_]I-stW:&'w$H\x02\
+  \x05H;\x04\x05{&hM\x0EeR\x12\n#ʠ@h[7Xri\x02\t\x11q\0!\x022\f\b\n\x0FDP_kfԿH;{$\x1D\
+  IGt\x12{\x02\x1DPt\x02=Ԭ.(ЮcZ\t\x05ӝdP \x14LP@-j-)|$MC\x04d\x14H\x03\b\x11a@P@\x7F\
+  \ \x02Z4UE\\t$Mz$H\x02\x05H;\x04\x05{*K]\vu.H+\0\x7F<\f\nD\x0E\t\n(xb3&Jv\t85\r\x11\
+  Q@kH\x01@֐\x02\x01A\x01\b\nkӌWW 5\x1DI:\t\x15 Eo\x13\x14ho[@\x1A\x12\neP`\x16\x18\
+  \x02\n^\asKBi\x02\x05\x18\a|\v0\f\b\n\x0FDP_kfԿHk_,,\x16\nw@\t\n/n]\x0E]Y[\x05\x05\
+  J\vw\tGa/=p#^\v.2N(5,#Y\\\\+w^ؘQԷ*JX9\nD\e\x15^zSU\f#k\x05珕J({alY6rNl\x17OWH\x7F\
+  gq\x7F\x0FK\x05)m{r61ާ\x17z\x163N\x14)k\x1Ax\x1Dx%F4Bw&6,\x13h#{%V\tk\t)s\e\x01\
+  7J\x01_w%F4Bw+*\x017,\x13p#{%V\tk\t)s\e\x017J\x01J'\r?\e\x017k\b\x1E\x04ܰO앀[%%%\x02\
+  n\x04(k\ap+v\x1D\x037xk\x02n\x04ȮM#t\a;\x0E\x13p\x12>\x017W\x02n2\b\x11p\x04\x1D\
+  7y\f\t\x11p#6\x1D\x0FM\rK\x04^\tUZ\x02n\\\"F\x12v\0N1pw'F8w^7o\x02nh'{{%V\tk\t)s\e\
+  \x017J\x1A\x02n?כA\\\bMPB\e\x04U)\r\x1E\x14V2b=\x04\x12\r\x14\b\x04\x05C\x0E^vwݻg\x7F\
+  \x0F^v>_><UGv<cuuw\x0FE+uxy\x1E\\'P2f\x03&\x02\x1Dc\x1A2`C{'Sv\ezȶ&\r\x1C{e\x1A\
+  &xA.\x170}3(0p\x0E\x02y#hzVs\x19N:\x12fd)y\nAxk[V<t}m\x1Duf].4\eB)Z\x15Z\")\0L,v46wloRA\x1C\
+  ;wn^\x14V^m>N,K;ec;\x1Cv=[uZ$\x05\t؎M*hc{\a\x17gƓL\aqj\vb;TbP6;\x0EQl׳\\CER\0p)Yhlޤ9wx5y{\x13\
+  p\x01sڂ<Tb/E6ÛRPl׳ܞیERV+#K\x1DwA\x05\x1D/}]1}\x05\x1Dsf]u9\e)Zn[V\")\0L,v46wloRA\x1C\
+  ;wno6這|lG*,\x17/\vP@8d-H$+ؙ-\x14ys3(T\e_GS׌r\x12#V\f4o\a[q'ȫeR\x12C\x1DPw1$euGb{%1NսmNj\t\
+  = &\0\x03[E*\x11Y0FioZ1Ck\x12(l%ԏjMO\x04%35l\x101!\x1C<\"&\x18GAvr\asZα-G:3XՍy\x03\
+  :\x1D:\n[c[SAIM\r!:utyLX\aϸ\b \tQ\x1Da\x01a6b[\x1CT :sjcv01ց!\x01jB?5տ\x02.CXGǄu\x0E\
+  Λ`\x1D\x05\x11֩*\x1E\x10i%i5S۱N\f\"?6)n\x15c\x1Dx{,:\x1D:\nwc[S|@IM\r:utyLX\aϸ\b\
+  \ \tQ\x1Da\x01aVakU]˱N\f\"?6)n\x17\x18c\x1Dx@:\x1D:\n\0\eo\x06Jjjhإ:<&g\\uu\x04\
+  (ȎNUN+N;ێu*g\x10a\x1D9Nq\x18ۧ\x12\0Qhͨ\x1Fۚ\bJjjh/!c:xEX\aYM\bT\x15\x0F\b\x114ʸXz\x06\
+  \x11S\t\x1E\x0F\rڮCk\x18ڴ\t(L\x06Oއg[\f\x06jfj\ri\x01ze=\nT=HGU;L\x19\b2:+֖i\x1F\
+  \x7FY\x1E\x03m\x02\x1D@*|~%\x10S$nVΰ(aD`\x18\x12)#\x1A\x16\x03GQYM\x13\x13\x05ӲA\\\
+  5k\0;_\x06\ei\x037ICB,d\x14H\x03\ba@\x16>f\x1F\b3ؚuW\x13z\b0P\x15jj5\x19rQj\x16\
+  t\rA\x17`Awcsd!iЅ\x02jh\a\x18\a\n0\f(\a\f\x03a\x06]6?Bw\x1FA\x17&\x16\n^W2t5\x19\
+  tQj\x16tA\x17驇Aw=l\x16 3f7\rQ A\x172\x0E B\x01\x05]@AW\x7F ԠkoB#BAWev(kYA\x17ufAWr$\e\
+  t-Gz\x18tbɦSӠ\v\x19\x05\x100\x0E\x19`\x18PЅ\x0F\x19t\a\ff\e>.L,\x14tZC2,5\x19tQj\x16\
+  t{߳A\x17t\x176\x11dƬ\x13a\x1At!\x02Ɓ\x05\f\x03{\v\x1EH@Ah\a;]X(\nl5N-K\f5N\x17sfAW\t\
+  3\etg\x14tս\\\x0F\x12N^*\x06](Mq ۝\0À.| ͠?\x10f5\n\"\x7F\x11tab+ֲfjXeM\x06]ԩ\x82\
+  n\x02*E=16T:jtPxd~dҐ\x14$$ޗ\x12\x05\x04RHHU3l+\x17Z}g\x1Dܮ5\x7F\x14qԎ\x0F%\x04\x13\
+  +\x1D,\x98\x7F\e14\"C\x0E\x17(9\x1E!i\x19\x13^!p.#{saoag\x03=\x03\x15j~7ߘ\x01vt;:\t\
+  $u\0$Mp-ƅ\x0246\x0Ed!}\eʩ\x1A5PF\x17\x1305;\tȴGx\x12&\x02M\x04Z#\x04\x02M(rٮdH`S;́i*\0\
+  \vVuTj|o>\x0E`:H,0\x14=y@9QPr\0Ta\0Tn/\t\x1A\0|\x17JXZ\x04:!\x12|G!\x10|\x91hޮz\x1E\
+  \ 4\x15\0\x05+H\\:|*\x12'x\x15O\x1DOz=l\rE\x0Fؑ^N\x14\x01,dy9U\x10|R.*|cK\x13i\x01\
+  (qM\x04!\x12|C!\x10|B9y+\x17\tznN4\x15\0\x05+H\\:|*\x15'x,O\x1DOlaPLI(\x04>)\x05\
+  '\x05 LW\x13>ńO\rj\x02>,\x16DOI\x03\x19\"{\x14\x02'\x14Xӭmc[o\x10>5ߗ\x1C>\x02``\x05\
+  ]Oŝ\x0Fc\x04|H\x03i^m6I昱PODA{B>S\x05'e{§(6\0=*^S\x12|@H\x1E@\tE.ەe\bnɽOwXEd\n\x15\
+  zw\x1D>\x15\x13-\x0E'{M$\x16\x18\x1Ed(n9YH\vr LWAn\x19]L@?\x06m\x13I1V\x04:!\x12\
+  |G!\x10|\x91Zn\"[o\x10>5+\x1C>\x02`p\x05]O{[XNQ=Zj\x15\n/Tߜ@C0\b\x1050\aC[\t$\r\
+  v\x19[c0]\x0E\x18,B\x1C\x13\x1Cs9l\x02tp)0mꛪ\x11\x14Rr@ߨW\x05zdjV5Wd^\x1D(+2J\n\
+  DQ$7z1UV@8LFݪ\bQÁe1\x03)\aRP\x1C\x03U\0hc\x1A9*eXE2k (~Q\\S\fݰjB>Z@2TaSŬ\x15\x1D\
+  C8d\x19U͊!fsjF.\x05*t\x01F1fCU3,ˢ\x19Bd̝ (~Q\\S\fݰjB>Z@U3TaSլUF8d\x19UJb\x1F?GU3r\x01\
+  .W͚8䍪fXEU3Ș;J)k\x03\x05APT5[姪\x19aՄ}`{f¦Y_f-;tq|\x7FU3T\x1D7\x15:\x1AWৎRՌ\\\vU\x02\
+  hcV\x1A9ۓfXEU3Ș;A/k\x03\x05APT5[姪\x19aՄ}`{f¦Y_f-;tq|\x7FU3T\x1D7\x15\x1F6\x1DWMSՌ\\\
+  \vU\x02hV͚8ҙfXEU3Ș;85k\x03\x05APT5[姪\x19aՄ}`{f¦Y_f\x1F\vOU3nUf\bJfљT5#\x17@U\v[k\"\
+  g*Ѳj\x10\x19segm \b\nf\x14WzT5C7\x100\x0Fl\x16P\fUT5k^oV%\"@UW5Cqvw{\rjT\x7F>\t\
+  H:6\x0FClձ0\x1A\eGo\x17،$M\v}XY9\x04-o/\x16!c;oA>=\x12\n4RAx\x17\vywp@q>\e1\x03\
+  1'q\x05Jqőo`ʔ7\x0E4\0:\0<oVBVqj|;y1BL2َg؞\x1E\x19@*\bd<K\x1Df\e0\x1Aџ|.f\"eAN˟\x13\
+  Y)i\x0Fi\x12\x0F崔v<FQ]hb\0體#d<\eg;Q\x14\nrˣ?9m]ENL?3iQN*\x1F \x1Fi)xN;f\x11{X\x01\
+  RN[@hrR\x01\"u1\x179-.3\rrZD\x13.\x05fB9vNXh?RNvlS\vl\trz\x042'J] v^\x1Eibf/rZ\\\
+  f\x1A|q.\x05\x1AV;Un?(\x1Fi)xN;\x1AL\x17\0W)\td\f\x17Z] v^\x1E=ZO[\x133\x16\x06\
+  9-\rig!\e)\rʜV9~(9r>\x0Fd\x06J9m=\x02Ƴ@\\}\x11\nrˣ?9m]ENL\e#9\0tJ\e}\x10}!~B\ee&\r\
+  $$tY\x04?ePIO}:sY\aJ\x11ӓo\x19\x12V\x14g`\x05\x1CL3gjTغ\x11i\a\x1A\x11fO=Z\x04\r\
+  h.a \x13hԙ\x14!@\x0F@(H \x16\x04$ʬx♘\x016L_\v2\b\a:n)zYǍ.fZg\0G]mUNLO\x16\x15 %\a\
+  tA\x18eK\x18(Dc!8Q@ql\\\x15`U0\x01j6m\x17\x17m\x04cϛ1~p\x19\x06@F,\0(P%0cm-8GpL&v\x12\
+  Ό6\\\0)17wB\x1A\x04LM@5fc̵y`<U6І\x17}/\x0Fm-\bD7\tm\x14BnFV¤{\x1Ce\x12!hs7f>\x1F\
+  mF%\rY'h\x1Fs\x19VtZhS\tڴI\x1Ahƚ\x17k+Q@l\x12l|_c!*A\e}h÷p6N\x04m\x153\\ӛL\tY\x0F\
+  mr!3D#\x02\x02Y\0QJƞzF\\̺;h` \x04m5fjͧĥ˵\x7F17wB\x1A\x04LЦM@6ۙ5^4l\x1ElJ}x'3]`\0\
+  2^\x1E\x06_\x12\f>Wr\x14`}\x18:A`nFF`=l[\\%ɾ;\x18=\t\x06\x0F\flY\n(z\x011ܜߍ.W\v\x03\
+  j\x1006I\x03\r\x06l6V|\x0E( 6\t\x03z\x15+T\r>ᛟFC\ex\x0FT6犙[]T&m\0R}U3D#BK)J3[ɧw\a\
+  m\x14\fM&v\x12ڌ\\\\\ej=A\e}cnF+ޗR\tڴI\x1AxRfۭ%ި)\nKn\x181JF\x1F=p\r\x15.AsM!ׇ6\n\
+  \ \x04fhT\tؖ=Q'..&hs?f=\x06%\x04mc9\e]\x16 `6m\x06\x1A:ң( 6\tmf%9V4U6*?MCgاchkO0Q^Z{_JwQ:d\x16\
+  \\{\nƫ'g]J7\ePTxnB!Q~6駔\x06Ӓ^g\x05)\rT\x7F@\f\x1FEO5?\0Ag=DEDGg0P6tb-\x14(RUv%[\x16\
+  mkkjg'U8*mAtwx\x04FmY\x14o)ުIԲ+0|U\x1Em۵T\x05݌\x16ʈ⭆bߞoS;k!v\x13]Y܄28H6\x14o\e3f\x16\
+  &㭵[1\x11Nx[6$\x1Do=C($b[[MM%WWM(\x13o~]\x14o3zMz]H|Uv%\vS2\x16eO[FvZoޜܷxkへpj67LXS5\x06\
+  ȇʾ+˲tT\x05\e,\x16⭆W\x7F\\xخeպmnBx\\xK\x1Eҭ5u\x13Fn[po\x17\x1EB\x18g٧k\x04\ve\x1F\
+  =\x1E(,\x17>xN?Y\x036+I=mk\x13Wq[Qs=jww{h\e\x17\x03GQ\0{n\"*D|->\x14`;\x10`V\vm\x10\
+  ^l6#\x06ꟹEav<K\x15ż@[â|Be-l2آN0\x16lI[v\x1F\n\x1D\bf\vRK`ꟹEv9\x19\"\x10nkxXp[9xog1j\x18\
+  n\vv-|\x0F\x0E[Bk%V\x7FXimܢp;-Gcp[â[ԳwScS`O:7PB5Z\x0E/Zm\x02/V-\nS{׊\vBw:h3.-T\r\
+  m^tpۅwFRϻ\x0FjʟMnRCTn\x7FXw\x16s`O:2p|­bx\x12n?<}gnQƳNN\x1A\x1E\x16-V\x7F\x16\x10\
+  N\x1F̩&6\x0F\0\0\x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0ݐ`\x01\0\0\x16\x04\0\0\x14\
+  \0\0\0word/webSettings.xmlAo \x14\0R\x1AzY,\x03\x10^-\x11x\r~Pbw)\x03\x1EA\ahr2\x19\
+  $\x01QHhI\x12\x11L\x1Cuj\x066}%A1.<'uF\x15hX\t\x1FK0[\x11G]3/7RI\x7F4](X3\x06|jA\x05\
+  \x11dZs֠\x15E\x0E΅hu4Lf7ܢҏbZ*O6\x0F\x0F\x037a\f\x1A2\x14Üő\x1E ӹ8\x170|F42*kTYO<5B0l\x17\
+  \x19jm\rZQA\n]JZ8>ġ\rо\x05Aص\"_\x146\x1FﯴXѫ\\\x02\0\0\x03\0PK\x03\x04\x14\0\x06\0\
+  \b\0\0\0!\0Ҏ*&\x03\0\0\f\0\0\x12\0\0\0word/fontTable.xmln0\x14@\x02\aA{'\x04y\f\x01\
+  4EYDDR 8^s\x13\x0E-%\x7Fc k~ȱ\x1D[A\x11\v+<:8auMmoߵ-±\b)\x1F/^ǶTx\x12Iߞ\x11e\x1F\
+  \x1D\x7Fw0Egʂ\\\x18q=Q8&\f}\x12\x0E\x17#!\x19\x1C;\fɫI\x05KQFG4]e\x17\x18\vED\x11\
+  L\t#<3\x1DI\x12 \nb6݅6\x152LD)3Kr\x1EC/0^\x02b\x14KDd\x11\x19\x14t\\b\x13Y\x0F\0\
+  Zct\n\x03=\x1C\x1A\x16\x1C\x1AV8\eL\x05\x10Nj!F9\x0E}+,\x15fa\\\x0FW\fH(G\f*<\x12\
+  LROZs\x011\f>h\0\t҂Ĳ\fXi\e\x13ZF\x06X;,*ך8b\0HL<E\\(k\x04wpxۂsmێ\x11H*\x19~\x1E\x10\
+  ɬI&xJ3\x1Ck$B~I1\\\vc\x11\x0F刿rOc9\r\x1C*3|+\x1E\x11e]Y0\nщr\e \"\x0F`\x10B1r\x0E\
+  c\a'#\x10iw'+F/\x191\x7FSF0\r&܄6⿁\tׯ\bt$XDv̍DO'q,\vd\x17\x10.\ax\x1FŤM\x17\\\"l̛Z[LD\x15\
+  \e\x12u|\x1E\rYc\U000F7E02a]Wǰ\x13=\x01\vAy\x195Jկ\t\x1AoS=\t`b`\x0Fv/\x13~~}\x04\
+  b_צ\x1AӅWQ^Cm!.,%;T1M \f]ک\x1A?~%k.Dnȥ6dPΩV.%]Pu\x02SiF\\\b}ADP\0\0\0\x03\0PK\x03\
+  \x04\x14\0\x06\0\b\0\0\0!\0^b\x19\x01\0\0'\x03\0\0\x11\0\b\x01docProps/core.xml\
+  \ \x04\x01(\0\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0|Mo0\f@\x03\x1F\fȲb0\x1C\x15톞V`2lMXG\x01\
+  \x7F?YI&(v#gRw3C\n!jgׄ*RNiۯɯ]\x14\x11Ubp\x16dH\x0Ft\x01~\x04!X$kE-QnJMG\x17z!E\x0F\
+  +j\0\x12(,,b$\aҿ!\v0\x01\x15'\x16!nC!û豸л\x17p\x1Cd4?λ@xd\x1A\a\x1D=)/\x0FO q\x7F\
+  $)\x01\x04[gK.3y0.ϲ)2h\x1Ey\x0F\x16@PT\\ނs\x10\x11Ӆ?jP\x13\x11\x06@Q\x147[\x17\x18\
+  UφיXp\a\x10iw~\x1DuŚele۪;\x0Fy\x7F\x12\05W%4\eٹ($]˼Ξ6\a\0\0\x03\0PK\x03\x04\x14\0\
+  \x06\0\b\0\0\0!\01Y9\x03\x01\0\0\x11\x04\0\0\x10\0\b\x01docProps/app.xml \x04\x01\
+  (\0\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Sn\x131\x10#\x0F+\eoB\x1AH丂T\aJ#e۞w6ږF\r_x\x18\
+  \a8{oYv\b>(kd:I\x05FV<6>*DaZ59A 7\eց\nB\x16&!F4\x03\"LlYߋ:%ʗ\x1EL^Px`Zh\\6$\x18\
+  ״2\vOɡ\x1Fg\rN\bk6f56\nݨ\x1E\x14LV!$m\x046\x05#dBF Ϯ\x19-\x049\\~vz\x18\x12Wɀ\b\
+  W@x\x15Of2\x1D0\"\vw\b|\x02fvRh`\x03x't\0F\x7F\v\x0ED\x1AV\x14\x18WG*\x1F8\x19\0\
+  mkr\x14^\t\x13xl$\x03.D\e\x155zg>X<uq\x04\a\a2d@|n!<t2aZ)^\x18m*d\x13\x06{N3\x9E\
+  \x7F\x0Fi_~R,VY\tc/r)\x12ۡ\n-N9)\v\x0E_5^\t:s3\rhmО-.-|\x1Ap>]Lj\rkwpw\x7F\x02\0\
+  \0\x03\0PK\x03\x04\x14\0\x06\0\b\0\0\0!\0t?9z\0\0\0(\x01\0\0\x1E\0\b\x01customXml/_rels/item1.xml.rels\
+  \ \x04\x01(\0\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0ϱ0\f\x06hoP\x11K)t;J\x0E\x1AGILcXji߾+t(QE]1hjP\x18\
+  \x1D\r>N\x06~j\x03.\x14\x1D\x19G{J\t\x13D60o\x18,W0H9X)ctl'_u\x01ݓ\x0E|\x18\x1A\
+  P=;6w#w\t\x18Ev\x17\x16\nd*yB1\x05ߪ\tk\x7F\x03\0\0\x03\0PK\x01\x02-\0\x14\0\x06\0\
+  \b\0\0\0!\0$L}\x01\0\0)\x06\0\0\x13\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0[Content_Types].xmlPK\x01\
+  \x02-\0\x14\0\x06\0\b\0\0\0!\0\x1E\x1A\0\0\0N\x02\0\0\v\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \x03\0\0_rels/.relsPK\x01\x02-\0\x14\0\x06\0\b\0\0\0!\0\x1Az\x0F\0\0\nM\0\0\x11\0\
+  \0\0\0\0\0\0\0\0\0\0\0\0\x06\0\0word/document.xmlPK\x01\x02-\0\x14\0\x06\0\b\0\0\
+  \0!\0\b\e\x01\0\0D\x04\0\0\x1C\0\0\0\0\0\0\0\0\0\0\0\0\0\x16\0\0word/_rels/document.xml.relsPK\x01\
+  \x02-\0\x14\0\x06\0\b\0\0\0!\0!Zb\x06\0\0\x1D\0\0\x15\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  \ \x19\0\0word/theme/theme1.xmlPK\x01\x02-\0\x14\0\x06\0\b\0\0\0!\0\x13\x04\0\0\
+  U\r\0\0\x11\0\0\0\0\0\0\0\0\0\0\0\0\0\x1F\0\0word/settings.xmlPK\x01\x02-\0\x14\0\
+  \x06\0\b\0\0\0!\0\x06\0\0\0\x04\x01\0\0\x13\0\0\0\0\0\0\0\0\0\0\0\0\0s$\0\0customXml/item1.xmlPK\x01\
+  \x02-\0\x14\0\x06\0\b\0\0\0!\0Z\al\0\0\0U\x01\0\0\x18\0\0\0\0\0\0\0\0\0\0\0\0\0\
+  v%\0\0customXml/itemProps1.xmlPK\x01\x02-\0\x14\0\x06\0\b\0\0\0!\0vu;\x04\0\08\x1D\
+  \0\0\x12\0\0\0\0\0\0\0\0\0\0\0\0\0&\0\0word/numbering.xmlPK\x01\x02-\0\x14\0\x06\
+  \0\b\0\0\0!\0yV6\0\0uC\x05\0\x0F\0\0\0\0\0\0\0\0\0\0\0\0\0+\0\0word/styles.xmlPK\x01\
+  \x02-\0\x14\0\x06\0\b\0\0\0!\0ݐ`\x01\0\0\x16\x04\0\0\x14\0\0\0\0\0\0\0\0\0\0\0\0\
+  \0b\0\0word/webSettings.xmlPK\x01\x02-\0\x14\0\x06\0\b\0\0\0!\0Ҏ*&\x03\0\0\f\0\0\
+  \x12\0\0\0\0\0\0\0\0\0\0\0\0\0hd\0\0word/fontTable.xmlPK\x01\x02-\0\x14\0\x06\0\b\
+  \0\0\0!\0^b\x19\x01\0\0'\x03\0\0\x11\0\0\0\0\0\0\0\0\0\0\0\0\0g\0\0docProps/core.xmlPK\x01\
+  \x02-\0\x14\0\x06\0\b\0\0\0!\01Y9\x03\x01\0\0\x11\x04\0\0\x10\0\0\0\0\0\0\0\0\0\0\
+  \0\0\0j\0\0docProps/app.xmlPK\x01\x02-\0\x14\0\x06\0\b\0\0\0!\0t?9z\0\0\0(\x01\0\
+  \0\x1E\0\0\0\0\0\0\0\0\0\0\0\0\0m\0\0customXml/_rels/item1.xml.relsPK\x05\x06\0\0\
+  \0\0\x0F\0\x0F\0\x03\0\0o\0\0\0\0"

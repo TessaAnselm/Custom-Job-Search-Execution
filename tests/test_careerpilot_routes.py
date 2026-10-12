@@ -25,6 +25,32 @@ class CareerPilotRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertIn("verify your candidate profile", response.get_json()["error"])
 
+    def test_vllm_check_requires_selected_provider(self):
+        with patch.dict("os.environ", {"AI_PROVIDER": "openai"}, clear=False):
+            response = self.client.post("/api/vllm/check")
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("AI_PROVIDER=vllm", response.get_json()["error"])
+
+    def test_vllm_check_returns_only_safe_connection_details(self):
+        with patch.dict("os.environ", {"AI_PROVIDER": "vllm"}, clear=False), \
+             patch("ai.vllm.check_connection", return_value={
+                 "model": "Qwen/Qwen3-4B", "latency_ms": 123.4,
+                 "response": "vLLM connection OK", "base_url": "http://private-service:8000/v1",
+             }):
+            response = self.client.post("/api/vllm/check")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {
+            "ok": True, "model": "Qwen/Qwen3-4B", "latency_ms": 123.4,
+            "message": "vLLM connection OK",
+        })
+
+    def test_vllm_check_error_does_not_return_exception_details(self):
+        with patch.dict("os.environ", {"AI_PROVIDER": "vllm"}, clear=False), \
+             patch("ai.vllm.check_connection", side_effect=TimeoutError("secret token leaked")):
+            response = self.client.post("/api/vllm/check")
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn("secret token leaked", response.get_data(as_text=True))
+
     def test_resume_extraction_starts_unverified(self):
         profile = flask_app._build_profile_from_extracted({"name": "Candidate"}, "Resume facts")
         self.assertFalse(profile["profile_verified"])
@@ -48,6 +74,73 @@ class CareerPilotRouteTests(unittest.TestCase):
         self.assertIn("configured vLLM endpoint could not extract", data["warning"])
         self.assertFalse(data["profile"]["profile_verified"])
         save_profile.assert_called_once()
+
+    def test_unconfigured_extractor_warns_instead_of_silently_skipping_fields(self):
+        with patch.dict("os.environ", {"AI_PROVIDER": "openai", "OPENAI_API_KEY": ""}, clear=False), \
+             patch.object(flask_app, "gpt_extract_profile") as extract, \
+             patch.object(flask_app, "save_profile"):
+            response = self.client.post(
+                "/api/upload-resume",
+                data={"resume": (BytesIO(b"Candidate resume text"), "resume.txt")},
+                content_type="multipart/form-data",
+            )
+
+        data = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("No AI profile extractor is configured", data["warning"])
+        self.assertEqual(data["profile"]["base_resume"].strip(), "Candidate resume text")
+        extract.assert_not_called()
+
+    def test_resume_upload_maps_extracted_facts_into_profile_fields(self):
+        extracted = {
+            "name": "Candidate", "experience_years": 5, "skills": ["Python", "Kubernetes"],
+            "target_titles": ["Platform Engineer"], "salary_minimum": 0,
+        }
+        with patch.dict("os.environ", {"AI_PROVIDER": "vllm", "VLLM_HOST": "http://localhost:8000/v1"}, clear=False), \
+             patch.object(flask_app, "gpt_extract_profile", return_value=extracted), \
+             patch.object(flask_app, "save_profile"):
+            response = self.client.post(
+                "/api/upload-resume",
+                data={"resume": (BytesIO(b"Candidate resume text"), "resume.txt")},
+                content_type="multipart/form-data",
+            )
+
+        profile = response.get_json()["profile"]
+        self.assertEqual(profile["name"], "Candidate")
+        self.assertEqual(profile["experience_years"], 5)
+        self.assertEqual(profile["skills"], ["Python", "Kubernetes"])
+        self.assertEqual(profile["target_titles"], ["Platform Engineer"])
+        self.assertEqual(profile["salary"]["minimum"], 0)
+
+    def test_resume_upload_normalizes_common_name_and_experience_aliases(self):
+        with patch.dict("os.environ", {"AI_PROVIDER": "vllm", "VLLM_HOST": "http://localhost:8000/v1"}, clear=False), \
+             patch.object(flask_app, "gpt_extract_profile", return_value={
+                 "full_name": "Candidate Name", "years_of_experience": "8+ years",
+             }), patch.object(flask_app, "save_profile"):
+            response = self.client.post(
+                "/api/upload-resume",
+                data={"resume": (BytesIO(b"Candidate resume text"), "resume.txt")},
+                content_type="multipart/form-data",
+            )
+
+        profile = response.get_json()["profile"]
+        self.assertEqual(profile["name"], "Candidate Name")
+        self.assertEqual(profile["experience_years"], 8)
+
+    def test_docx_text_is_extracted_without_an_additional_package(self):
+        import zipfile
+
+        document = BytesIO()
+        with zipfile.ZipFile(document, "w") as archive:
+            archive.writestr(
+                "word/document.xml",
+                '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                '<w:body><w:p><w:r><w:t>Candidate Name</w:t></w:r></w:p></w:body></w:document>',
+            )
+        document.seek(0)
+        upload = BytesIO(document.read())
+        upload.filename = "resume.docx"
+        self.assertEqual(flask_app.extract_text_from_upload(upload), "Candidate Name")
 
 
 if __name__ == "__main__":

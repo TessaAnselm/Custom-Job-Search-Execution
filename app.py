@@ -330,16 +330,41 @@ def resume_path_for_job(job: dict) -> str | None:
 
 
 def extract_text_from_upload(file_storage) -> str:
-    filename = file_storage.filename.lower()
+    filename = (file_storage.filename or "").lower()
+    extension = os.path.splitext(filename)[1]
     raw = file_storage.read()
-    if filename.endswith(".pdf"):
+    if extension == ".pdf":
         try:
             import PyPDF2
             reader = PyPDF2.PdfReader(io.BytesIO(raw))
-            return "\n".join(page.extract_text() or "" for page in reader.pages)
+            text = "\n".join(page.extract_text() or "" for page in reader.pages).strip()
         except ImportError:
-            return raw.decode("utf-8", errors="ignore")
-    return raw.decode("utf-8", errors="ignore")
+            raise ValueError("PDF text extraction is unavailable. Install the project's requirements and try again.")
+        if not text:
+            raise ValueError("No selectable text was found in this PDF. Scanned-image resumes need OCR before upload.")
+        return text
+    if extension == ".docx":
+        import xml.etree.ElementTree as ET
+        import zipfile
+
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as document:
+                xml = document.read("word/document.xml")
+            root = ET.fromstring(xml)
+        except (KeyError, ET.ParseError, zipfile.BadZipFile) as exc:
+            raise ValueError("This DOCX file could not be read. Save it as PDF or plain text and try again.") from exc
+        namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        paragraphs = [
+            "".join(node.text or "" for node in paragraph.findall(".//w:t", namespace))
+            for paragraph in root.findall(".//w:p", namespace)
+        ]
+        text = "\n".join(paragraphs).strip()
+        if not text:
+            raise ValueError("No text was found in this DOCX file.")
+        return text
+    if extension in {".txt", ""}:
+        return raw.decode("utf-8", errors="ignore").strip()
+    raise ValueError("Unsupported file type. Upload a text-based PDF, DOCX, or TXT resume.")
 
 
 def gpt_extract_profile(resume_text: str) -> dict:
@@ -573,6 +598,8 @@ def index():
         total=len(load_local_jobs()) if has_local else len(jobs),
         using_live=live,
         using_local=has_local,
+        profile_verified=bool(profile.get("profile_verified")),
+        has_resume=has_resume,
         waiting_resume=False,
         region=region,
         enabled_sources=get_enabled_sources(),
@@ -697,6 +724,29 @@ def api_save_profile():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+@app.route("/api/vllm/check", methods=["POST"])
+def api_check_vllm():
+    """Run a small, profile-free probe so the setup guide can verify inference."""
+    if os.getenv("AI_PROVIDER", "openai").lower() != "vllm":
+        return jsonify({"ok": False, "error": "Set AI_PROVIDER=vllm before testing the Akamai model."}), 409
+    try:
+        from ai.vllm import check_connection
+
+        result = check_connection()
+        return jsonify({
+            "ok": True,
+            "model": result["model"],
+            "latency_ms": result["latency_ms"],
+            "message": result["response"],
+        })
+    except Exception as exc:
+        app.logger.warning("vLLM connectivity probe failed (%s)", type(exc).__name__)
+        return jsonify({
+            "ok": False,
+            "error": f"Akamai model check failed ({type(exc).__name__}). Check VLLM_HOST, credentials, and the port-forward/service status.",
+        }), 503
+
+
 @app.route("/api/upload-resume", methods=["POST"])
 def api_upload_resume():
     if "resume" not in request.files:
@@ -706,7 +756,7 @@ def api_upload_resume():
         text = extract_text_from_upload(f)
         extracted = {"base_resume": text.strip()}
 
-        provider = os.getenv("AI_PROVIDER", "openai")
+        provider = os.getenv("AI_PROVIDER", "openai").lower()
         has_key = {
             "gemini":    bool(os.getenv("GOOGLE_API_KEY")),
             "anthropic": bool(os.getenv("ANTHROPIC_API_KEY")),
@@ -719,15 +769,45 @@ def api_upload_resume():
         if has_key:
             try:
                 structured = gpt_extract_profile(text)
+                if isinstance(structured.get("profile"), dict):
+                    structured = structured["profile"]
+                structured = dict(structured)
+                if not structured.get("name"):
+                    structured["name"] = structured.get("full_name") or structured.get("candidate_name") or ""
+                years = (
+                    structured.get("experience_years")
+                    or structured.get("years_of_experience")
+                    or structured.get("years_experience")
+                )
+                if years not in (None, ""):
+                    years_match = re.search(r"\d+", str(years))
+                    structured["experience_years"] = int(years_match.group()) if years_match else 0
+                else:
+                    structured["experience_years"] = 0
                 extracted.update(structured)
+                missing_fields = []
+                if not str(structured.get("name", "")).strip():
+                    missing_fields.append("name")
+                if not structured.get("experience_years"):
+                    missing_fields.append("years of experience")
+                if missing_fields:
+                    extracted["profile_extraction_warning"] = (
+                        "The resume was read, but the AI could not identify "
+                        + " and ".join(missing_fields)
+                        + ". Please fill in the missing field(s) and verify the rest."
+                    )
             except Exception as exc:
-                if provider != "vllm":
-                    raise
-                app.logger.warning("vLLM profile extraction unavailable (%s)", type(exc).__name__)
+                app.logger.warning("%s profile extraction unavailable (%s)", provider, type(exc).__name__)
+                extractor_name = "vLLM endpoint" if provider == "vllm" else f"{provider} provider"
                 extracted["profile_extraction_warning"] = (
-                    "The configured vLLM endpoint could not extract this profile. "
+                    f"The configured {extractor_name} could not extract this profile. "
                     "The resume text was saved; fill and verify the profile fields below."
                 )
+        else:
+            extracted["profile_extraction_warning"] = (
+                "No AI profile extractor is configured. Set AI_PROVIDER and its credentials or vLLM endpoint; "
+                "the resume text was saved, but fill and verify the profile fields below."
+            )
 
         # Build and save a complete profile.yaml immediately
         profile = _build_profile_from_extracted(extracted, text)

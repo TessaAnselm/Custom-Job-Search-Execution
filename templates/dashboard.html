@@ -51,12 +51,41 @@
 
   {% else %}
 
-  <section class="agent-panel">
-    <div class="agent-panel-copy">
-      <h2>CareerPilot AI</h2>
-      <p>Search real postings, explain match evidence, and prepare a draft application package with Akamai-hosted inference. A human reviews everything before any application action.</p>
+  <section class="careerpilot-panel" aria-labelledby="careerPilotHeading">
+    <div class="careerpilot-heading">
+      <div>
+        <p class="careerpilot-eyebrow">Your job-search sidekick</p>
+        <h2 id="careerPilotHeading">Meet CareerPilot</h2>
+        <p>The guide will take you from Akamai connection to a draft you can review and submit yourself.</p>
+      </div>
+      <button class="btn btn-primary" id="runCareerPilotBtn" aria-describedby="careerPilotSafety">Run CareerPilot</button>
     </div>
-    <button class="btn btn-primary" id="runCareerPilotBtn">Run CareerPilot</button>
+
+    <div class="careerpilot-journey" id="careerPilotJourney" aria-label="CareerPilot workflow guide"
+      data-page="jobs"
+      data-profile-verified="{{ 'true' if profile_verified else 'false' }}"
+      data-has-resume="{{ 'true' if has_resume else 'false' }}"
+      data-has-matches="{{ 'true' if jobs else 'false' }}">
+      <ol class="careerpilot-journey-steps" aria-label="Application preparation steps">
+        <li class="careerpilot-journey-step">Connect Akamai</li>
+        <li class="careerpilot-journey-step">Load resume</li>
+        <li class="careerpilot-journey-step">Verify facts</li>
+        <li class="careerpilot-journey-step">Find and score</li>
+        <li class="careerpilot-journey-step">Create draft</li>
+        <li class="careerpilot-journey-step">You submit</li>
+      </ol>
+      <div class="careerpilot-journey-coach">
+        <img class="careerpilot-journey-monster" src="/static/monsters/monster-wave.png" alt="" aria-hidden="true" />
+        <div class="careerpilot-journey-copy">
+          <strong class="careerpilot-journey-title">CareerPilot workflow guide</strong>
+          <p class="careerpilot-journey-message" role="status" aria-live="polite">The guide will highlight your next step.</p>
+          <button class="btn btn-primary careerpilot-journey-action" id="careerPilotJourneyAction" type="button">Continue</button>
+          <p class="careerpilot-journey-status" id="careerPilotJourneyStatus" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+    <p class="careerpilot-safety" id="careerPilotSafety">Your profile must be verified first. The coach only prepares drafts—nothing is sent or submitted.</p>
+
     <div id="careerPilotStatus" class="agent-status" role="status" aria-live="polite"></div>
     <div id="careerPilotMetrics" class="agent-metrics hidden"></div>
     <div id="careerPilotActivity" class="agent-activity hidden"></div>
@@ -211,6 +240,7 @@
   </div>
 </div>
 
+<script src="/static/js/careerpilot-journey.js"></script>
 <script src="/static/js/dashboard.js"></script>
 </body>
 </html>

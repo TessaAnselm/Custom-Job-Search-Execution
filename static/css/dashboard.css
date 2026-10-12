@@ -235,19 +235,32 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
 }
 .search-result.hidden { display: none; }
 
-.agent-panel {
+.careerpilot-panel {
   margin: 1rem 0 1.5rem;
-  padding: 1.1rem 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  padding: clamp(1rem, 2.5vw, 1.6rem);
+  border: 1px solid #383552;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 90% 0%, #29234a 0%, var(--surface) 58%);
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: .8rem 1rem;
-  align-items: center;
+  gap: 1rem;
 }
-.agent-panel-copy h2 { font-size: 16px; margin-bottom: .25rem; }
-.agent-panel-copy p { color: var(--text-dim); max-width: 760px; }
+.careerpilot-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.careerpilot-heading h2 { font-size: 20px; margin: .1rem 0 .25rem; }
+.careerpilot-heading p:last-child { color: var(--text-dim); max-width: 680px; }
+.careerpilot-eyebrow { color: #c4b5fd; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.careerpilot-journey { padding: .9rem; border: 1px solid #393650; border-radius: 12px; background: #1b1b29; }
+.careerpilot-journey-steps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .45rem; padding: 0; margin: 0 0 .85rem; list-style: none; }
+.careerpilot-journey-step { min-width: 0; padding: .55rem .45rem; border: 1px solid var(--border); border-radius: 9px; color: var(--text-dim); text-align: center; font-size: 11px; line-height: 1.25; background: #171923; }
+.careerpilot-journey-step[data-state="current"] { color: #fff; border-color: #8b83ec; background: #292542; box-shadow: 0 0 0 1px #8b83ec33; }
+.careerpilot-journey-step[data-state="done"] { color: #c7f9d4; border-color: #286342; background: #14251d; }
+.careerpilot-journey-coach { display: flex; align-items: center; gap: .85rem; min-height: 112px; padding: .75rem; border: 1px solid #393650; border-radius: 10px; background: #242236; }
+.careerpilot-journey-monster { flex: 0 0 96px; width: 96px; height: 96px; object-fit: cover; object-position: left center; border-radius: 8px; }
+.careerpilot-journey-copy { min-width: 0; }
+.careerpilot-journey-title { color: #e1dcff; font-size: 13px; }
+.careerpilot-journey-message { color: var(--text); line-height: 1.55; margin: .25rem 0 .65rem; }
+.careerpilot-journey-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.careerpilot-journey-status { color: var(--text-dim); font-size: 12px; line-height: 1.45; margin-top: .5rem; }
+.careerpilot-safety { color: var(--text-dim); font-size: 12px; }
 .agent-status { grid-column: 1 / -1; color: var(--text-dim); }
 .agent-metrics, .agent-activity { grid-column: 1 / -1; padding: .7rem .8rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); }
 .agent-metrics.hidden, .agent-activity.hidden { display: none; }
@@ -263,8 +276,11 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
 .agent-result-card details { margin-top: .6rem; }
 .agent-result-card pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; margin-top: .4rem; }
 @media (max-width: 680px) {
-  .agent-panel { grid-template-columns: 1fr; }
-  .agent-panel > button { justify-self: start; }
+  .careerpilot-heading { align-items: flex-start; flex-direction: column; }
+  .careerpilot-journey-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .careerpilot-journey-step { font-size: 10px; }
+  .careerpilot-journey-coach { align-items: flex-start; padding: .6rem; }
+  .careerpilot-journey-monster { flex-basis: 64px; width: 64px; height: 64px; }
 }
 
 /* Temporal workflow progress display */
