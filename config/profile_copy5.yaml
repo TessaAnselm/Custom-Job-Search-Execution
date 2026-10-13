@@ -1,0 +1,198 @@
+profile_verified: true
+name: Teresita (Tessa) Anselm
+experience_years: 3
+role_type: Either
+target_titles:
+- Cybersecurity Engineer
+- Security Analyst
+- Threat Intelligence Analyst
+- Security Operations Center (SOC) Analyst
+- Cloud Security Engineer
+skills:
+- Log and network traffic analysis
+- Alert review
+- Authentication and system activity review
+- Splunk
+- ELK
+- OWASP Top 10
+- Vulnerability assessment
+- MITRE ATT&CK mapping
+- Threat intelligence enrichment
+- Baseline deviation alerts
+- Risk scoring
+- Incident escalation with full context
+- Python
+- Bash
+- SQL
+- JavaScript
+- REST APIs
+- Postman
+- FastAPI
+- Git and GitHub
+- Linux
+- Kali Linux
+- TCP/IP
+- DNS
+- HTTP/HTTPS
+- OSI model
+- Wireshark
+- Nmap
+- Burp Suite
+- AWS
+- Docker
+- Kubernetes
+- minikube
+- Cloud security fundamentals
+location:
+  preferred:
+  - San Francisco
+  - Remote
+  hard_no: []
+salary:
+  minimum: 0
+  target: 0
+industries:
+  preferred:
+  - Technology
+  - Cloud Computing
+  - Cybersecurity
+  - Information Technology
+  - Network Security
+  avoid: []
+scoring_weights:
+  title_match: 0.3
+  skills_match: 0.25
+  salary_match: 0.2
+  location_match: 0.15
+  industry_match: 0.1
+minimum_score: 65
+base_resume: 'I am a security operations and detection focused engineer with hands
+  on experience reviewing authentication events, network traffic, system logs, and
+  alerts. I build Python and Bash tools to automate analysis, work in Splunk and ELK,
+  and validate findings with Wireshark, Nmap, and Burp Suite. I document test results
+  and technical findings clearly for engineers and non technical stakeholders. I am
+  a methodical, detail oriented approach to monitoring and alert investigation.
+
+
+  TERESITA (TESSA) ANSELM
+
+  San Francisco, CA  |  tessa.anselm@gmail.com  |  linkedin.com/in/tessa-anselm  |  tessaanselm.github.io  |  github.com/TessaAnselm
+
+  PROFESSIONAL SUMMARY
+
+  Security operations and detection focused engineer with hands on experience reviewing
+  authentication events, network traffic, system logs, and alerts. Builds Python and
+  Bash tools to automate analysis, works in Splunk and ELK, and validates findings
+  with Wireshark, Nmap, and Burp Suite. Documents test results and technical findings
+  clearly for engineers and non technical stakeholders. CompTIA Security+ certified
+  and Georgia Tech M.S. in Cybersecurity candidate, with a methodical, detail oriented
+  approach to monitoring and alert investigation.
+
+  CORE COMPETENCIES
+
+  Security Monitoring and Analysis: Log and network traffic analysis, alert review,
+  authentication and system activity review, Splunk, ELK, OWASP Top 10, vulnerability
+  assessment
+
+  Detection and Threat Context: MITRE ATT&CK mapping, threat intelligence enrichment,
+  baseline deviation alerts, risk scoring, incident escalation with full context
+
+  Scripting and Query Languages: Python, Bash, SQL, JavaScript, REST APIs, Postman,
+  FastAPI, Git and GitHub
+
+  Networking and Systems: Linux, Kali Linux, TCP/IP, DNS, HTTP/HTTPS, OSI model, Wireshark,
+  Nmap
+
+  Security Testing and Cloud: Burp Suite, test validation, AWS, Docker, Kubernetes,
+  minikube, cloud security fundamentals
+
+  PROFESSIONAL EXPERIENCE
+
+  San Francisco Chapter Lead  |  AI Security Engineers (Snyk supported community)2026
+  to Present
+
+  •Lead a San Francisco technical community focused on AI security education, developer
+  enablement, and secure AI workflows.
+
+  •Support hands on workshops demonstrating Snyk integrations with Claude, GitHub,
+  and command line tools, troubleshooting setup and integration issues as they arise.
+
+  •Collaborate with organizers and industry partners to make security guidance approachable
+  for developers and learners with varied experience.
+
+  Cybersecurity and AI Application Engineer Intern  |  CyberTrust AmericaJul 2025
+  to Oct 2025
+
+  •Investigated bugs and unexpected behavior in an AI enabled web application, reproducing
+  issues and documenting actionable findings for developers and stakeholders.
+
+  •Tested backend and frontend integrations and authentication flows using Postman
+  and Burp Suite, validating fixes and documenting test results.
+
+  •Translated technical security findings into remediation guidance for technical
+  and non technical audiences, maintaining documentation that supported implementation.
+
+  •Identified unnecessary cloud resource usage and recommended changes that reduced
+  operational costs.
+
+  Cybersecurity Tech Mentor and Teaching Assistant  |  Bay Area Cyber LeagueMay 2024
+  to Nov 2024
+
+  •Diagnosed network and web security lab issues using Wireshark packet captures and
+  Burp Suite, guiding learners through traffic and request analysis in real time.
+
+  •Guided beginner users through networking, web security, cryptography, and password
+  security labs, adjusting explanations to each user''s technical level.
+
+  •Facilitated hands on CyberCamp and National Cyber League preparation sessions for
+  high school and community college students.
+
+  Workshop Assistant, AI and Cybersecurity  |  DEF CON, supporting Instructor Sam
+  BowneAug 2024
+
+  •Maintained live workshop environments and resolved lab, tooling, setup, and access
+  issues under time pressure for an audience with mixed technical experience.
+
+  •Escalated complex issues to the instructor with clear context while continuing
+  to support participants through hands on exercises.
+
+  Founder and President  |  Women in CyberSecurity (WiCyS), CCSF ChapterJul 2024 to
+  Dec 2025
+
+  •Founded and grew a technical community to 60+ members, delivering recurring workshops
+  and training other members to run sessions independently.
+
+  •Authored chapter reports and program documentation, and coordinated partners and
+  funding to support community programs.
+
+  SELECTED TECHNICAL PROJECTS
+
+  Home Sentinel Network Monitoring Platform  |  Python, Flask, Nmap, SQLitePersonal
+  project
+
+  •Built a home network monitoring platform for device discovery, baseline deviation
+  alerts, risk scoring, and threat intelligence enrichment, applying Python automation
+  and practical network diagnostics.
+
+  Kubernetes Security Research Lab  |  Kubernetes, Bash, MITRE ATT&CKLive
+
+  •Built and published a self guided Kubernetes security lab covering 90 real CVEs
+  and a runnable supply chain attack simulation, mapping techniques to MITRE ATT&CK
+  and documenting findings for analysts.
+
+  EDUCATION
+
+  M.S. Cybersecurity, Information Security  |  Georgia Institute of TechnologyExpected
+  2028
+
+  A.S. Computer Networking and Information Technology, Cybersecurity Focus  |  City
+  College of San FranciscoMay 2025
+
+  Dean''s Honor List, 4.0 GPA
+
+  B.S. Electrical Engineering  |  Trine University
+
+  CERTIFICATIONS
+
+  CompTIA Security+, CompTIA SecurityX (CASP+), CompTIA A+, AWS Certified Cloud Practitioner,
+  Cloud Security Alliance CCSK, ISC2 Certified in Cybersecurity, Microsoft AZ-900'

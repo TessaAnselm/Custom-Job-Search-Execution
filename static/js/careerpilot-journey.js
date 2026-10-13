@@ -59,6 +59,24 @@
     return { complete, current: current < 0 ? stages.length - 1 : current };
   }
 
+  // Each fresh page load re-renders data-has-resume / data-profile-verified /
+  // data-has-matches straight from the server (profile.yaml / job state) — that is
+  // always the current truth at load time. sessionStorage only needs to track what
+  // happens *after* that, within this page view (an upload or edit resetting
+  // verification, a save confirming it) before the next reload refreshes it again.
+  // Without this sync, a "false" cached from an earlier visit in this tab would
+  // shadow a true value the server has had the whole time (the bug this fixes), via
+  // the `??` fallback above only triggering on null/undefined, never on `false`.
+  function syncFromServer() {
+    const root = document.querySelector('.careerpilot-journey');
+    if (!root) return;
+    writeState({
+      resumeUploaded: root.dataset.hasResume === 'true',
+      profileVerified: root.dataset.profileVerified === 'true',
+      matchesReady: root.dataset.hasMatches === 'true',
+    });
+  }
+
   function render(root) {
     const { complete, current } = derive(root);
     root.dataset.currentStep = String(current);
@@ -113,6 +131,8 @@
     render: renderAll,
   };
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderAll);
-  else renderAll();
+  // syncFromServer() already calls writeState(), which renders — no separate
+  // renderAll() call needed here.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncFromServer);
+  else syncFromServer();
 })();
