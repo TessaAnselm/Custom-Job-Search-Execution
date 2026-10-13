@@ -41,9 +41,11 @@ The Akamai workshop is expected to provide a Kubernetes namespace, JupyterLab wo
 
 For additional Kubernetes deployment notes, see the [CareerPilot workshop runbook](docs/CareerPilot_Runbook.md).
 
+Open the [CareerPilot presentation](docs/presentation.html) in a browser for the visual demo slides and narration.
+
 ### Frontend screenshots
 
-These screenshots show the guided profile setup and the resume-extraction failure captured during testing. The parser has since been hardened for Qwen reasoning and Markdown-wrapped JSON; a live Akamai resume-extraction run still needs verification.
+These screenshots show the guided profile setup and the resume-extraction failure captured during testing. **Verified fixed** against the live Akamai endpoint: the actual cause was Qwen3's "thinking" tokens consuming the whole response budget on this extraction prompt before any JSON was written (confirmed by inspecting the raw model output — an empty string). The fix appends `/no_think` to the extraction prompt only when `AI_PROVIDER=vllm` (Qwen3's chat-template convention to skip reasoning for that turn — other providers don't send it), combined with the existing hardened parser for any `<think>`/Markdown-wrapped responses that still slip through. Re-run live: 10 seconds, complete and correctly populated profile fields.
 
 <p align="center">
   <img src="docs/image/Screenshot%202026-10-12%20at%204.34.08%E2%80%AFPM.png" alt="CareerPilot setup guide at the Akamai connection step" width="90%" />
@@ -68,6 +70,10 @@ These screenshots show the guided profile setup and the resume-extraction failur
 <p align="center">
   <img src="docs/image/Screenshot%202026-10-12%20at%204.39.02%E2%80%AFPM.png" alt="CareerPilot reporting a vLLM profile extraction failure" width="90%" />
   <br /><em>6. Captured issue: the connection check passes, but resume extraction fails.</em>
+</p>
+<p align="center">
+  <img src="docs/image/Screenshot%202026-10-12%20at%205.46.00%E2%80%AFPM.png" alt="CareerPilot running job discovery, matching, and application draft preparation" width="90%" />
+  <br /><em>7. After fixing resume extraction, CareerPilot starts the guided discovery, matching, and draft workflow; this screenshot captures the run in progress.</em>
 </p>
 
 ---

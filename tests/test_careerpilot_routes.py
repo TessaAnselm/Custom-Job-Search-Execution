@@ -132,12 +132,27 @@ class CareerPilotRouteTests(unittest.TestCase):
             "<think>I'll organize the candidate details first.</think>\n"
             "```json\n{\"name\": \"Candidate Name\", \"experience_years\": 8}\n```"
         )
-        with patch("ai.client.complete_sync", return_value=response_text) as complete:
+        with patch.dict("os.environ", {"AI_PROVIDER": "vllm"}, clear=False), \
+             patch("ai.client.complete_sync", return_value=response_text) as complete:
             extracted = flask_app.gpt_extract_profile("Candidate resume text")
 
         self.assertEqual(extracted, {"name": "Candidate Name", "experience_years": 8})
         complete.assert_called_once()
-        self.assertEqual(complete.call_args.kwargs["max_tokens"], 3000)
+        # 800, not a larger budget: once /no_think is sent (below), Qwen3 produces no
+        # reasoning tokens, so a small budget is reliable AND fast — measured live,
+        # 800+/no_think succeeds in ~10s where 3000 without it still failed at 93s.
+        self.assertEqual(complete.call_args.kwargs["max_tokens"], 800)
+        prompt_sent = complete.call_args.args[0]
+        self.assertTrue(prompt_sent.rstrip().endswith("/no_think"))
+
+    def test_profile_extractor_does_not_send_no_think_to_other_providers(self):
+        response_text = '{"name": "Candidate Name", "experience_years": 8}'
+        with patch.dict("os.environ", {"AI_PROVIDER": "openai"}, clear=False), \
+             patch("ai.client.complete_sync", return_value=response_text) as complete:
+            flask_app.gpt_extract_profile("Candidate resume text")
+
+        prompt_sent = complete.call_args.args[0]
+        self.assertNotIn("/no_think", prompt_sent)
 
     def test_docx_text_is_extracted_without_an_additional_package(self):
         import zipfile

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10152a">
+  <title>CareerPilot AI — Presentation</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f7f7fb;
+      --muted: #bec2d8;
+      --panel: rgba(255,255,255,.075);
+      --line: rgba(255,255,255,.14);
+      --pink: #ff82b6;
+      --cyan: #7de4e4;
+      --gold: #ffd17c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: radial-gradient(ellipse at 78% 18%, #443d79 0, transparent 36%),
+                  radial-gradient(ellipse at 10% 85%, #204a63 0, transparent 37%), #10152a;
+      font: 16px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button { color: inherit; font: inherit; }
+    .topbar {
+      height: 58px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(16px, 4vw, 54px); border-bottom: 1px solid var(--line);
+      background: rgba(8,11,25,.32); letter-spacing: .02em;
+    }
+    .brand { font-weight: 750; }
+    .brand span { color: var(--pink); }
+    .hint { color: var(--muted); font-size: .82rem; }
+    main { width: min(1240px, 94vw); margin: 0 auto; padding: clamp(18px, 4vh, 40px) 0 20px; }
+    .slide {
+      display: none; min-height: min(700px, calc(100vh - 142px));
+      grid-template-columns: minmax(0, 1fr) minmax(280px, .82fr); gap: clamp(22px, 4vw, 54px);
+      align-items: center; padding: clamp(24px, 5vw, 64px);
+      border: 1px solid var(--line); border-radius: 28px;
+      background: linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.035));
+      box-shadow: 0 30px 90px rgba(0,0,0,.24); overflow: hidden;
+    }
+    .slide.active { display: grid; animation: arrive .32s ease-out; }
+    @keyframes arrive { from { opacity: .35; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .copy { max-width: 700px; }
+    .eyebrow { color: var(--cyan); font-size: .76rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2 { margin: 10px 0 18px; line-height: 1.04; letter-spacing: -.035em; }
+    h1 { font-size: clamp(2.8rem, 6vw, 5.3rem); }
+    h2 { font-size: clamp(2.2rem, 4.3vw, 3.8rem); }
+    h1 span { color: var(--pink); }
+    .lead { color: var(--muted); font-size: clamp(1.07rem, 1.6vw, 1.35rem); max-width: 62ch; }
+    .script {
+      margin-top: 26px; padding: 18px 20px; border: 1px solid var(--line); border-left: 3px solid var(--pink);
+      border-radius: 14px; background: rgba(8,11,25,.42); color: #f6f3fa;
+      font-size: clamp(.98rem, 1.25vw, 1.13rem); line-height: 1.7;
+    }
+    .script-label { display: block; margin-bottom: 7px; color: var(--pink); font-size: .72rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+    .visual { display: grid; place-items: center; min-height: 300px; }
+    .visual img { display: block; max-width: 100%; max-height: 430px; object-fit: contain; border-radius: 18px; }
+    .visual .screenshot { width: 100%; box-shadow: 0 22px 60px rgba(0,0,0,.35); border: 1px solid var(--line); }
+    .monster { width: min(380px, 82%); filter: drop-shadow(0 24px 26px rgba(0,0,0,.28)); }
+    .stack { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 18px; }
+    .stack div, .flow div { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .stack b { color: var(--gold); display: block; font-size: .92rem; }
+    .stack small { color: var(--muted); }
+    .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 20px 0 0; color: var(--cyan); }
+    .flow div { color: var(--ink); text-align: center; font-size: .88rem; }
+    .flow span { color: var(--pink); font-weight: 800; }
+    .status { display: grid; gap: 12px; margin-top: 20px; }
+    .status article { padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+    .status strong { display: block; margin-bottom: 3px; }
+    .good { color: var(--cyan); } .pending { color: var(--gold); }
+    .controls { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 4px 0; }
+    .buttons { display: flex; gap: 9px; }
+    .buttons button { padding: 9px 16px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.08); cursor: pointer; }
+    .buttons button:hover, .buttons button:focus-visible { outline: 2px solid var(--cyan); background: rgba(255,255,255,.15); }
+    .buttons .next { color: #171226; border-color: transparent; background: var(--pink); font-weight: 800; }
+    .counter { min-width: 54px; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+    .progress { height: 3px; margin-top: 14px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,.14); }
+    .progress i { display: block; height: 100%; width: 14.28%; background: linear-gradient(90deg,var(--pink),var(--cyan)); transition: width .25s ease; }
+    .footer { padding: 14px 5px 0; color: var(--muted); font-size: .76rem; text-align: center; }
+    @media (max-width: 760px) {
+      .hint { display: none; }
+      .slide, .slide.active { grid-template-columns: 1fr; gap: 12px; padding: 26px 22px; }
+      .visual { min-height: 180px; max-height: 260px; grid-row: 1; }
+      .visual img { max-height: 245px; }
+      .slide { min-height: calc(100vh - 155px); }
+      .stack { grid-template-columns: 1fr 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    @media print {
+      body { background: white; color: #151525; }
+      .topbar, .controls, .progress, .footer { display: none; }
+      main { width: 100%; padding: 0; }
+      .slide, .slide.active { display: grid !important; min-height: 95vh; break-after: page; box-shadow: none; background: white; border-color: #aaa; }
+      .script { color: #151525; background: #f7f7fa; }
+      .lead, .stack small { color: #444; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">CareerPilot <span>AI</span></div>
+    <div class="hint">Presentation · Use ← → or Space to navigate · F for fullscreen</div>
+  </header>
+  <main aria-label="CareerPilot presentation">
+    <section class="slide active" aria-label="Slide 1 of 7">
+      <div class="copy">
+        <div class="eyebrow">A job-search assistant with human oversight</div>
+        <h1>CareerPilot <span>AI</span></h1>
+        <p class="lead">Find relevant opportunities. Understand your fit. Prepare stronger applications—with the candidate still in control.</p>
+        <div class="script"><span class="script-label">Say</span>Hi, I’m building <strong>CareerPilot AI</strong>, a job-search assistant designed to help people find relevant opportunities, match their experience to job requirements, and prepare tailored applications while keeping them in control.</div>
+      </div>
+      <div class="visual"><img class="monster" src="monster-wave.png" alt="CareerPilot monster mascot waving hello"></div>
+    </section>
+
+    <section class="slide" aria-label="Slide 2 of 7">
+      <div class="copy">
+        <div class="eyebrow">01 · The problem</div>
+        <h2>Less busywork.<br>More trust.</h2>
+        <p class="lead">Job searching repeats the same time-consuming tasks for every opening.</p>
+        <div class="script"><span class="script-label">Say</span><strong>Why I built it:</strong> Job searching is repetitive and time-consuming. I wanted to automate the tedious parts without relying on AI to invent qualifications, change match scores, or submit applications without approval.</div>
+      </div>
+      <div class="visual"><img class="monster" src="monster-surprise.png" alt="CareerPilot monster reacting with surprise"></div>
+    </section>
+
+    <section class="slide" aria-label="Slide 3 of 7">
+      <div class="copy">
+        <div class="eyebrow">02 · Technology</div>
+        <h2>Built on what<br>already works.</h2>
+        <div class="stack" aria-label="Technology stack">
+          <div><b>Python + Flask</b><small>Existing app and dashboard</small></div>
+          <div><b>Playwright</b><small>Browser-based job discovery</small></div>
+          <div><b>Deterministic scorer</b><small>Repeatable job-fit scores</small></div>
+          <div><b>AWS Strands</b><small>Agent orchestration</small></div>
+          <div><b>vLLM + Qwen3-4B</b><small>Self-hosted inference</small></div>
+          <div><b>Kubernetes</b><small>Workshop service access</small></div>
+          <div><b>Temporal (optional)</b><small>Workflow management</small></div>
+        </div>
+        <div class="script"><span class="script-label">Say</span><strong>Technology:</strong> CareerPilot builds on my existing Python and Flask application, using Playwright for job discovery, deterministic scoring for job matching, AWS Strands for agent orchestration, and vLLM serving Qwen3-4B on Akamai GPU infrastructure. Kubernetes supports deployment and access to the inference service, while Temporal remains optional for workflow management.</div>
+      </div>
+      <div class="visual"><img class="monster" src="monster-talk.png" alt="CareerPilot monster explaining the technology"></div>
+    </section>
+
+    <section class="slide" aria-label="Slide 4 of 7">
+      <div class="copy">
+        <div class="eyebrow">03 · The workflow</div>
+        <h2>From resume<br>to review.</h2>
+        <div class="flow" aria-label="CareerPilot workflow">
+          <div>Upload resume</div><span>→</span><div>Verify profile</div><span>→</span><div>Discover jobs</div><span>→</span><div>Review drafts</div>
+        </div>
+        <div class="script"><span class="script-label">Say</span><strong>How it works:</strong> Users upload a resume, verify their profile, and discover relevant jobs. CareerPilot explains matches, identifies skill gaps, and prepares tailored resumes and cover letters using verified information. Everything remains available for human review before applying.</div>
+      </div>
+      <div class="visual"><img class="screenshot" src="image/Screenshot%202026-10-12%20at%204.34.08%E2%80%AFPM.png" alt="CareerPilot profile setup guide showing the Akamai connection step"></div>
+    </section>
+
+    <section class="slide" aria-label="Slide 5 of 7">
+      <div class="copy">
+        <div class="eyebrow">04 · Self-hosted inference</div>
+        <h2>Your app.<br>Akamai’s model.</h2>
+        <p class="lead">The Flask app can run locally while inference requests reach Qwen3-4B on the workshop GPU.</p>
+        <div class="script"><span class="script-label">Say</span><strong>Why self-hosted inference matters:</strong> Instead of sending every AI request to an external provider, CareerPilot can use a model running on Akamai's GPU infrastructure, giving greater control over inference and the opportunity to measure performance and efficiency.</div>
+      </div>
+      <div class="visual"><img class="screenshot" src="image/Screenshot%202026-10-12%20at%204.36.40%E2%80%AFPM.png" alt="CareerPilot connected to the Qwen3-4B model"></div>
+    </section>
+
+    <section class="slide" aria-label="Slide 6 of 7">
+      <div class="copy">
+        <div class="eyebrow">05 · Current progress</div>
+        <h2>Verified connection.<br>Agent loop in progress.</h2>
+        <div class="status">
+          <article><strong class="good">✓ Akamai Qwen3-4B connection</strong>Connectivity to the model has been verified.</article>
+          <article><strong class="good">✓ Resume extraction fix</strong>Qwen3 profile extraction has now been verified against the live endpoint.</article>
+          <article><strong class="pending">◷ Full agent workflow</strong>End-to-end execution and AWS Strands tool calling are still being tested.</article>
+        </div>
+        <div class="script"><span class="script-label">Say</span><strong>Current progress:</strong> The connection to Akamai's Qwen3-4B model has been verified. End-to-end agent execution and AWS Strands tool calling are still being tested.</div>
+      </div>
+      <div class="visual"><img class="screenshot" src="image/Screenshot%202026-10-12%20at%205.46.00%E2%80%AFPM.png" alt="CareerPilot running job discovery, matching, and draft preparation; this screenshot captures an in-progress run"></div>
+    </section>
+
+    <section class="slide" aria-label="Slide 7 of 7">
+      <div class="copy">
+        <div class="eyebrow">The goal</div>
+        <h2>Automation with<br>human oversight.</h2>
+        <p class="lead">Practical job discovery, self-hosted inference, and candidate control in one workflow.</p>
+        <div class="script"><span class="script-label">Say</span><strong>My goal</strong> is to build a practical, transparent AI career assistant that combines automation, self-hosted inference, and human oversight.</div>
+      </div>
+      <div class="visual"><img class="monster" src="monster-celebrate.png" alt="CareerPilot monster celebrating"></div>
+    </section>
+
+    <div class="controls" aria-label="Presentation controls">
+      <div class="buttons"><button id="previous" type="button" aria-label="Previous slide">← Previous</button></div>
+      <div class="counter" id="counter" aria-live="polite">1 / 7</div>
+      <div class="buttons"><button id="fullscreen" type="button">Fullscreen</button><button id="next" class="next" type="button" aria-label="Next slide">Next →</button></div>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="progress"></i></div>
+    <div class="footer">CareerPilot AI · Demo presentation</div>
+  </main>
+  <script>
+    (() => {
+      const slides = [...document.querySelectorAll('.slide')];
+      const counter = document.getElementById('counter');
+      const progress = document.getElementById('progress');
+      let index = 0;
+      function show(next) {
+        index = Math.max(0, Math.min(slides.length - 1, next));
+        slides.forEach((slide, i) => {
+          slide.classList.toggle('active', i === index);
+          slide.setAttribute('aria-hidden', String(i !== index));
+        });
+        counter.textContent = `${index + 1} / ${slides.length}`;
+        progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+        document.getElementById('previous').disabled = index === 0;
+        document.getElementById('next').disabled = index === slides.length - 1;
+      }
+      document.getElementById('previous').addEventListener('click', () => show(index - 1));
+      document.getElementById('next').addEventListener('click', () => show(index + 1));
+      document.getElementById('fullscreen').addEventListener('click', async () => {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+        else await document.exitFullscreen?.();
+      });
+      document.addEventListener('keydown', event => {
+        if (['ArrowRight', ' ', 'PageDown'].includes(event.key)) { event.preventDefault(); show(index + 1); }
+        if (['ArrowLeft', 'PageUp'].includes(event.key)) { event.preventDefault(); show(index - 1); }
+        if (event.key.toLowerCase() === 'f') document.getElementById('fullscreen').click();
+        if (event.key === 'Home') show(0);
+        if (event.key === 'End') show(slides.length - 1);
+      });
+      show(0);
+    })();
+  </script>
+</body>
+</html>
